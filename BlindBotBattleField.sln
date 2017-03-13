@@ -1,0 +1,36 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 14
+VisualStudioVersion = 14.0.25420.1
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{A07B5EB6-E848-4116-A8D0-A826331D98C6}") = "BlindBotBattleField", "BlindBotBattleField\BlindBotBattleField.sfproj", "{6926D372-E236-47FC-8EC7-78A86504A769}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameManagerActor", "GameManagerActor\GameManagerActor.csproj", "{C3B8E2CE-70C0-4ECE-8BCD-E29592702297}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameManagerActor.Interfaces", "GameManagerActor.Interfaces\GameManagerActor.Interfaces.csproj", "{9708EA16-C937-4E21-93FF-347B43D8AB6E}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{6926D372-E236-47FC-8EC7-78A86504A769}.Debug|x64.ActiveCfg = Debug|x64
+		{6926D372-E236-47FC-8EC7-78A86504A769}.Debug|x64.Build.0 = Debug|x64
+		{6926D372-E236-47FC-8EC7-78A86504A769}.Debug|x64.Deploy.0 = Debug|x64
+		{6926D372-E236-47FC-8EC7-78A86504A769}.Release|x64.ActiveCfg = Release|x64
+		{6926D372-E236-47FC-8EC7-78A86504A769}.Release|x64.Build.0 = Release|x64
+		{6926D372-E236-47FC-8EC7-78A86504A769}.Release|x64.Deploy.0 = Release|x64
+		{C3B8E2CE-70C0-4ECE-8BCD-E29592702297}.Debug|x64.ActiveCfg = Debug|x64
+		{C3B8E2CE-70C0-4ECE-8BCD-E29592702297}.Debug|x64.Build.0 = Debug|x64
+		{C3B8E2CE-70C0-4ECE-8BCD-E29592702297}.Release|x64.ActiveCfg = Release|x64
+		{C3B8E2CE-70C0-4ECE-8BCD-E29592702297}.Release|x64.Build.0 = Release|x64
+		{9708EA16-C937-4E21-93FF-347B43D8AB6E}.Debug|x64.ActiveCfg = Debug|x64
+		{9708EA16-C937-4E21-93FF-347B43D8AB6E}.Debug|x64.Build.0 = Debug|x64
+		{9708EA16-C937-4E21-93FF-347B43D8AB6E}.Release|x64.ActiveCfg = Release|x64
+		{9708EA16-C937-4E21-93FF-347B43D8AB6E}.Release|x64.Build.0 = Release|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
