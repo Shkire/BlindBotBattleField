@@ -21,6 +21,12 @@ namespace GameManagerActor
     [StatePersistence(StatePersistence.Persisted)]
     internal class GameManagerActor : Actor, IGameManagerActor
     {
+        private Dictionary<string, int> p_playerIdMap;
+
+        private Dictionary<int, int[,]> p_playerPositions;
+
+        private List<int>[,] p_gameMapInfo;
+
         /// <summary>
         /// Inicializa una instancia nueva de GameManagerActor
         /// </summary>
@@ -46,7 +52,7 @@ namespace GameManagerActor
             throw new NotImplementedException();
         }
 
-        public Task<string> PlayerRegister()
+        public async Task<bool> PlayerRegisterAsync(string i_playerId)
         {
             throw new NotImplementedException();
         }

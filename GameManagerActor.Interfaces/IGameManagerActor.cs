@@ -13,7 +13,7 @@ namespace GameManagerActor.Interfaces
     /// </summary>
     public interface IGameManagerActor : IActor
     {
-        Task<string> PlayerRegister();
+        Task<bool> PlayerRegisterAsync(string i_playerId);
 
         Task PlayerMoves(int[,] i_dir, string i_playerId);
 
