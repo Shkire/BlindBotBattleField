@@ -8,22 +8,17 @@ using Microsoft.ServiceFabric.Actors;
 namespace GameManagerActor.Interfaces
 {
     /// <summary>
-    /// Esta interfaz define los métodos expuestos por un actor.
-    /// Los clientes utilizan esta interfaz para interactuar con el actor que la implementa.
+    /// GameManager Actor Interface.
+    /// Contains all actor methods and other actors or client can call it using this Interface.
     /// </summary>
     public interface IGameManagerActor : IActor
     {
-        /// <summary>
-        /// TODO: Reemplácelo por su propio método de actor.
-        /// </summary>
-        /// <returns></returns>
-        Task<int> GetCountAsync();
+        Task<string> PlayerRegister();
 
-        /// <summary>
-        /// TODO: Reemplácelo por su propio método de actor.
-        /// </summary>
-        /// <param name="count"></param>
-        /// <returns></returns>
-        Task SetCountAsync(int count);
+        Task PlayerMoves(int[,] i_dir, string i_playerId);
+
+        Task PlayerAttacks(string i_playerId);
+
+        Task PlayerDisconnect(string i_playerId);
     }
 }

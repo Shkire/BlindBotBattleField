@@ -31,41 +31,24 @@ namespace GameManagerActor
         {
         }
 
-        /// <summary>
-        /// Cada vez que se activa un actor, se llama a este método.
-        /// Un actor se activa la primera vez que se invoca alguno de sus métodos.
-        /// </summary>
-        protected override Task OnActivateAsync()
+        public Task PlayerAttacks(string i_playerId)
         {
-            ActorEventSource.Current.ActorMessage(this, "Actor activated.");
-
-            // StateManager es el almacén de estados privado de este actor.
-            // Los datos almacenados en StateManager se replicarán para ofrecer alta disponibilidad a los actores que utilizan almacenamiento de estados volátil o persistente.
-            // En StateManager se puede guardar cualquier objeto serializable.
-            // Para obtener más información, vea https://aka.ms/servicefabricactorsstateserialization.
-
-            return this.StateManager.TryAddStateAsync("count", 0);
+            throw new NotImplementedException();
         }
 
-        /// <summary>
-        /// TODO: Reemplácelo por su propio método de actor.
-        /// </summary>
-        /// <returns></returns>
-        Task<int> IGameManagerActor.GetCountAsync()
+        public Task PlayerDisconnect(string i_playerId)
         {
-            return this.StateManager.GetStateAsync<int>("count");
+            throw new NotImplementedException();
         }
 
-        /// <summary>
-        /// TODO: Reemplácelo por su propio método de actor.
-        /// </summary>
-        /// <param name="count"></param>
-        /// <returns></returns>
-        Task IGameManagerActor.SetCountAsync(int count)
+        public Task PlayerMoves(int[,] i_dir, string i_playerId)
         {
-            // No se garantiza que las solicitudes se procesarán en orden, ni siquiera una vez.
-            // Aquí, la función update comprueba si el recuento entrante es superior al recuento actual para mantener el orden.
-            return this.StateManager.AddOrUpdateStateAsync("count", count, (key, value) => count > value ? count : value);
+            throw new NotImplementedException();
+        }
+
+        public Task<string> PlayerRegister()
+        {
+            throw new NotImplementedException();
         }
     }
 }
