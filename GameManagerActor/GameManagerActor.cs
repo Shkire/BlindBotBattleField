@@ -21,11 +21,13 @@ namespace GameManagerActor
     [StatePersistence(StatePersistence.Persisted)]
     internal class GameManagerActor : Actor, IGameManagerActor
     {
-        private Dictionary<string, int> p_playerIdMap;
+        private List<string> p_playerIdMap;
 
         private Dictionary<int, int[,]> p_playerPositions;
 
         private List<int>[,] p_gameMapInfo;
+
+        private int p_maxPlayers;
 
         /// <summary>
         /// Inicializa una instancia nueva de GameManagerActor
@@ -52,9 +54,18 @@ namespace GameManagerActor
             throw new NotImplementedException();
         }
 
+        //!!!!!Player Id collision problem
         public async Task<bool> PlayerRegisterAsync(string i_playerId)
         {
-            throw new NotImplementedException();
+            bool aux;
+            if (p_playerIdMap.Count < p_maxPlayers)
+            {
+                aux = await Task.FromResult(true);
+                return aux;
+                //!!!!!Client must connect to lobby state events
+            }
+            aux = await Task.FromResult(false);
+            return aux;
         }
     }
 }
