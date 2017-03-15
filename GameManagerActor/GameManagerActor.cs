@@ -44,7 +44,7 @@ namespace GameManagerActor
             throw new NotImplementedException();
         }
 
-        public Task PlayerDisconnect(string i_playerId)
+        public async Task PlayerDisconnectAsync(string i_playerId)
         {
             throw new NotImplementedException();
         }
@@ -55,17 +55,18 @@ namespace GameManagerActor
         }
 
         //!!!!!Player Id collision problem
-        public async Task<bool> PlayerRegisterAsync(string i_playerId)
+        public Task<bool> PlayerRegister(string i_playerId)
         {
-            bool aux;
             if (p_playerIdMap.Count < p_maxPlayers)
             {
-                aux = await Task.FromResult(true);
-                return aux;
-                //!!!!!Client must connect to lobby state events
+                //!!!!!Client must connect to lobby state event
+                //!!!!!It only works for other connected clients
+                //2 STEP REGISTRATION (REGISTER - INFO UPDATE)?????
+                var ev = GetEvent<IGameLobbyEvents>();
+                ev.GameLobbyInfoUpdate();
+                return Task.FromResult(true);
             }
-            aux = await Task.FromResult(false);
-            return aux;
+            return Task.FromResult(false);
         }
     }
 }

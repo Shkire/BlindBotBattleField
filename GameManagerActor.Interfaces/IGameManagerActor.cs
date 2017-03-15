@@ -7,18 +7,24 @@ using Microsoft.ServiceFabric.Actors;
 
 namespace GameManagerActor.Interfaces
 {
+    public interface IGameLobbyEvents : IActorEvents
+    {
+        //!!!!!Define Event params
+        void GameLobbyInfoUpdate();
+    }
+
     /// <summary>
     /// GameManager Actor Interface.
     /// Contains all actor methods and other actors or client can call it using this Interface.
     /// </summary>
-    public interface IGameManagerActor : IActor
+    public interface IGameManagerActor : IActor, IActorEventPublisher<IGameLobbyEvents>
     {
-        Task<bool> PlayerRegisterAsync(string i_playerId);
+        Task<bool> PlayerRegister(string i_playerId);
 
         Task PlayerMoves(int[,] i_dir, string i_playerId);
 
         Task PlayerAttacks(string i_playerId);
 
-        Task PlayerDisconnect(string i_playerId);
+        Task PlayerDisconnectAsync(string i_playerId);
     }
 }
