@@ -10,7 +10,7 @@ namespace GameManagerActor.Interfaces
     public interface IGameLobbyEvents : IActorEvents
     {
         //!!!!!Define Event params
-        void GameLobbyInfoUpdate();
+        void GameLobbyInfoUpdate(List<string> o_playerIdMap);
     }
 
     /// <summary>
@@ -26,5 +26,7 @@ namespace GameManagerActor.Interfaces
         Task PlayerAttacks(string i_playerId);
 
         Task PlayerDisconnectAsync(string i_playerId);
+
+        Task UpdateLobbyInfo();
     }
 }

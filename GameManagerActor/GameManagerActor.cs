@@ -60,13 +60,16 @@ namespace GameManagerActor
             if (p_playerIdMap.Count < p_maxPlayers)
             {
                 //!!!!!Client must connect to lobby state event
-                //!!!!!It only works for other connected clients
-                //2 STEP REGISTRATION (REGISTER - INFO UPDATE)?????
-                var ev = GetEvent<IGameLobbyEvents>();
-                ev.GameLobbyInfoUpdate();
+                p_playerIdMap.Add(i_playerId);
                 return Task.FromResult(true);
             }
             return Task.FromResult(false);
+        }
+
+        public async Task UpdateLobbyInfo()
+        {
+            var ev = GetEvent<IGameLobbyEvents>();
+            ev.GameLobbyInfoUpdate(p_playerIdMap);
         }
     }
 }
