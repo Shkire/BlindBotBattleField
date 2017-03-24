@@ -27,7 +27,7 @@ namespace GameManagerActor
 
         private List<int>[,] p_gameMapInfo;
 
-        private int p_maxPlayers;
+        private int p_maxPlayers = 4;
 
         /// <summary>
         /// Inicializa una instancia nueva de GameManagerActor
@@ -37,6 +37,7 @@ namespace GameManagerActor
         public GameManagerActor(ActorService actorService, ActorId actorId)
             : base(actorService, actorId)
         {
+            p_playerIdMap = new List<string>();
         }
 
         public Task PlayerAttacks(string i_playerId)
