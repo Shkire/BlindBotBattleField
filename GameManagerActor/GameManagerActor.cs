@@ -21,7 +21,8 @@ namespace GameManagerActor
     [StatePersistence(StatePersistence.Persisted)]
     internal class GameManagerActor : Actor, IGameManagerActor
     {
-        private List<string> p_playerIdMap;
+        //List of players on this game
+        private List<string> p_playerList;
 
         private Dictionary<int, int[,]> p_playerPositions;
 
@@ -37,7 +38,7 @@ namespace GameManagerActor
         public GameManagerActor(ActorService actorService, ActorId actorId)
             : base(actorService, actorId)
         {
-            p_playerIdMap = new List<string>();
+            p_playerList = new List<string>();
         }
 
         public Task PlayerAttacks(string i_playerId)
@@ -58,10 +59,10 @@ namespace GameManagerActor
         //!!!!!Player Id collision problem
         public Task<bool> PlayerRegister(string i_playerId)
         {
-            if (p_playerIdMap.Count < p_maxPlayers)
+            if (p_playerList.Count < p_maxPlayers)
             {
                 //!!!!!Client must connect to lobby state event
-                p_playerIdMap.Add(i_playerId);
+                p_playerList.Add(i_playerId);
                 return Task.FromResult(true);
             }
             return Task.FromResult(false);
@@ -70,7 +71,7 @@ namespace GameManagerActor
         public async Task UpdateLobbyInfo()
         {
             var ev = GetEvent<IGameLobbyEvents>();
-            ev.GameLobbyInfoUpdate(p_playerIdMap);
+            ev.GameLobbyInfoUpdate(p_playerList);
         }
     }
 }
