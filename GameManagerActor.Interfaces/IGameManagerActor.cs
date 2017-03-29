@@ -19,7 +19,7 @@ namespace GameManagerActor.Interfaces
     /// </summary>
     public interface IGameManagerActor : IActor, IActorEventPublisher<IGameLobbyEvents>
     {
-        Task<bool> PlayerRegister(string i_playerId);
+        Task<bool> PlayerRegisterAsync(string i_playerId);
 
         Task PlayerMoves(int[,] i_dir, string i_playerId);
 
@@ -27,6 +27,8 @@ namespace GameManagerActor.Interfaces
 
         Task PlayerDisconnectAsync(string i_playerId);
 
-        Task UpdateLobbyInfo();
+        Task UpdateLobbyInfoAsync();
+
+        Task PlayerStillConnectedAsync(string i_playerId);
     }
 }

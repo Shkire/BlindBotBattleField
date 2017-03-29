@@ -12,6 +12,16 @@ namespace Client
 
     class LobbyEventsHandler : IGameLobbyEvents
     {
+        private IGameManagerActor p_actor;
+
+        private string p_playerId;
+
+        public LobbyEventsHandler(IGameManagerActor i_actor, string i_playerId)
+        {
+            p_actor = i_actor;
+            p_playerId = i_playerId;
+        }
+
         public void GameLobbyInfoUpdate(List<string> i_playerIdMap)
         {
             Console.Clear();
@@ -19,6 +29,7 @@ namespace Client
             {
                 Console.WriteLine((i+1).ToString()+". "+i_playerIdMap[i]);
             }
+            p_actor.PlayerStillConnectedAsync(p_playerId);
         }
     }
 
@@ -33,12 +44,12 @@ namespace Client
             string playerName = Console.ReadLine();
             Console.WriteLine("Connecting server...");
             IGameManagerActor actor = ActorProxy.Create<IGameManagerActor>(new ActorId("Manager"),APP_NAME);
-            bool registrationSuccess = actor.PlayerRegister(playerName).Result;
+            bool registrationSuccess = actor.PlayerRegisterAsync(playerName).Result;
             if (registrationSuccess)
             {
                 Console.WriteLine("Success");
-                actor.SubscribeAsync<IGameLobbyEvents>(new LobbyEventsHandler());
-                actor.UpdateLobbyInfo();
+                actor.SubscribeAsync<IGameLobbyEvents>(new LobbyEventsHandler(actor, playerName));
+                actor.UpdateLobbyInfoAsync();
                 Console.WriteLine("Waiting");
                 Console.ReadLine();
             }

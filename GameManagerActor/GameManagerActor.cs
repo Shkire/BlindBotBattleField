@@ -19,10 +19,13 @@ namespace GameManagerActor
     ///  - None: el estado se conserva solo en la memoria y no se replica.
     /// </remarks>
     [StatePersistence(StatePersistence.Persisted)]
-    internal class GameManagerActor : Actor, IGameManagerActor
+    internal class GameManagerActor : Actor, IGameManagerActor, IRemindable
     {
         //List of players on this game
         private List<string> p_playerList;
+
+        //Players that has confirmed that are connected
+        private List<string> p_connectedPlayers;
 
         private Dictionary<int, int[,]> p_playerPositions;
 
@@ -39,6 +42,7 @@ namespace GameManagerActor
             : base(actorService, actorId)
         {
             p_playerList = new List<string>();
+            p_connectedPlayers = new List<string>();
         }
 
         public Task PlayerAttacks(string i_playerId)
@@ -48,7 +52,13 @@ namespace GameManagerActor
 
         public async Task PlayerDisconnectAsync(string i_playerId)
         {
-            throw new NotImplementedException();
+            p_playerList.Remove(i_playerId);
+            p_connectedPlayers.Remove(i_playerId);
+            if (p_connectedPlayers.Count == 0)
+            {
+                IActorReminder reminder = GetReminder("LobbyCheck");
+                await UnregisterReminderAsync(reminder);
+            }
         }
 
         public Task PlayerMoves(int[,] i_dir, string i_playerId)
@@ -57,21 +67,49 @@ namespace GameManagerActor
         }
 
         //!!!!!Player Id collision problem
-        public Task<bool> PlayerRegister(string i_playerId)
+        public async Task<bool> PlayerRegisterAsync(string i_playerId)
         {
             if (p_playerList.Count < p_maxPlayers)
             {
-                //!!!!!Client must connect to lobby state event
+                if (p_playerList.Count == 0)
+                    await this.RegisterReminderAsync("LobbyCheck", null, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
                 p_playerList.Add(i_playerId);
-                return Task.FromResult(true);
+                p_connectedPlayers.Add(i_playerId);
+                return true;
             }
-            return Task.FromResult(false);
+            return false;
         }
 
-        public async Task UpdateLobbyInfo()
+        public async Task PlayerStillConnectedAsync(string i_playerId)
+        {
+            if (!p_connectedPlayers.Contains(i_playerId))
+                p_connectedPlayers.Add(i_playerId);
+        }
+
+        public async Task UpdateLobbyInfoAsync()
         {
             var ev = GetEvent<IGameLobbyEvents>();
             ev.GameLobbyInfoUpdate(p_playerList);
+        }
+
+        public async Task ReceiveReminderAsync(string reminderName, byte[] context, TimeSpan dueTime, TimeSpan period)
+        {
+            if (reminderName.Equals("LobbyCheck"))
+            {
+                for (int i=0; i<p_playerList.Count; i++)
+                {
+                    if (p_connectedPlayers.Contains(p_playerList[i]))
+                    {
+                        p_connectedPlayers.Remove(p_playerList[i]);
+                    }
+                    else
+                    {
+                        await PlayerDisconnectAsync(p_playerList[i]);
+                        i--;
+                    }
+                }
+            }
+            await UpdateLobbyInfoAsync();
         }
     }
 }
