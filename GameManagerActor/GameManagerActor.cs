@@ -7,9 +7,159 @@ using Microsoft.ServiceFabric.Actors;
 using Microsoft.ServiceFabric.Actors.Runtime;
 using Microsoft.ServiceFabric.Actors.Client;
 using GameManagerActor.Interfaces;
+using static GameManagerActor.Interfaces.MapInfo;
 
 namespace GameManagerActor
 {
+    class GameMap
+    {
+        //List of players on this game
+        private List<string> p_playerList;
+
+        //Players that has confirmed that are connected
+        private List<string> p_connectedPlayers;
+
+        private int p_maxPlayers;
+
+        private Dictionary<string, int[]> p_playerPositions;
+
+        private MapInfo[,] p_gameMapInfo;
+
+        private List<string> p_deadPlayers;
+
+        private GameManagerActor p_actor;
+
+        public int playerCount
+        {
+            get
+            {
+                return p_playerList.Count;
+            }
+        }
+
+        public int connectedPlayerCount
+        {
+            get
+            {
+                return p_connectedPlayers.Count;
+            }
+        }
+
+        public List<string> playerList
+        {
+            get
+            {
+                return p_playerList;
+            }
+        }
+
+        public void KillPlayer(string i_playerId)
+        {
+            p_playerList.Remove(i_playerId);
+        }
+
+        public bool ConnectPlayer(string i_playerId)
+        {
+            if (p_playerList.Count < p_maxPlayers)
+            {
+                p_playerList.Add(i_playerId);
+                p_connectedPlayers.Add(i_playerId);
+                return true;
+            }
+            return false;
+        }
+
+        public void DisconnectPlayer(string i_playerId)
+        {
+            p_playerList.Remove(i_playerId);
+            p_connectedPlayers.Remove(i_playerId);
+        }
+
+        public void PlayerConnected(string i_playerId)
+        {
+            if (!p_connectedPlayers.Contains(i_playerId))
+                p_connectedPlayers.Add(i_playerId);
+        }
+
+        public async Task CheckLobbyAsync()
+        {
+            for (int i = 0; i < p_playerList.Count; i++)
+            {
+                if (p_connectedPlayers.Contains(p_playerList[i]))
+                {
+                    p_connectedPlayers.Remove(p_playerList[i]);
+                }
+                else
+                {
+                    await p_actor.PlayerDisconnectAsync(p_playerList[i]);
+                    i--;
+                }
+            }
+        }
+
+        public int MovePlayer(int[] i_dir, string i_playerId, ref int[] o_playerPos, ref string o_killedPlayer)
+        {
+            int result = -1;
+            if (!p_deadPlayers.Contains(i_playerId))
+            {
+                result = 0;
+                int[] playerPos = p_playerPositions[i_playerId];
+                MapInfo destPos = p_gameMapInfo[playerPos[0] + i_dir[0], playerPos[1] + i_dir[1]];
+                if (destPos.Equals(CellContent.Hole))
+                {
+                    p_deadPlayers.Add(i_playerId);
+                    p_gameMapInfo[playerPos[0], playerPos[1]] = null;
+                    o_playerPos = new int[] { playerPos[0] + i_dir[0], playerPos[1] + i_dir[1] };
+                    result = 1;
+                }
+                else
+                {
+                    if (destPos.Equals(CellContent.Player))
+                    {
+                        o_killedPlayer = destPos.playerId;
+                        p_deadPlayers.Add(o_killedPlayer);
+                        o_playerPos = new int[] { playerPos[0] + i_dir[0], playerPos[1] + i_dir[1] };
+                        result = 2;
+                    }
+                    p_gameMapInfo[playerPos[0], playerPos[1]] = null;
+                    p_gameMapInfo[playerPos[0] + i_dir[0], playerPos[1] + i_dir[1]] = destPos;
+                    p_playerPositions.Remove(i_playerId);
+                    p_playerPositions.Add(i_playerId, new int[] { playerPos[0] + i_dir[0], playerPos[1] + i_dir[1] });
+                }
+            }
+            return result;
+        }
+
+        public void PlayerAttacks(string i_playerId, int i_attackRate, out List<int[]> o_hitPoints, out Dictionary<string,int[]> o_killedPlayersDict)
+        {
+            o_hitPoints = new List<int[]>();
+            o_killedPlayersDict = new Dictionary<string, int[]>();
+
+            if (!p_deadPlayers.Contains(i_playerId))
+            {
+                for (int i = -i_attackRate; i <= i_attackRate; i++)
+                {
+                    for (int j = -(i_attackRate - Math.Abs(i)); Math.Abs(i) + Math.Abs(j) <= i_attackRate; i++)
+                    {
+                        if (p_gameMapInfo[p_playerPositions[i_playerId][0] + i, p_playerPositions[i_playerId][1] + j].content.Equals(CellContent.Player))
+                        {
+                            string deadPlayer = p_gameMapInfo[p_playerPositions[i_playerId][0] + i, p_playerPositions[i_playerId][1] + j].playerId;
+                            p_gameMapInfo[p_playerPositions[i_playerId][0] + i, p_playerPositions[i_playerId][1] + j] = null;
+                            p_deadPlayers.Add(deadPlayer);
+
+                            o_killedPlayersDict.Add(deadPlayer, new int[] { p_playerPositions[i_playerId][0] + i, p_playerPositions[i_playerId][1] + j });
+                        }
+                        else
+                        {
+                            o_hitPoints.Add(new int[] { p_playerPositions[i_playerId][0] + i, p_playerPositions[i_playerId][1] + j });
+                        }
+                    }
+                }
+            }
+        }
+
+    }
+
     /// <remarks>
     /// Esta clase representa a un actor.
     /// Cada elemento ActorID se asigna a una instancia de esta clase.
@@ -21,17 +171,9 @@ namespace GameManagerActor
     [StatePersistence(StatePersistence.Persisted)]
     internal class GameManagerActor : Actor, IGameManagerActor, IRemindable
     {
-        //List of players on this game
-        private List<string> p_playerList;
+        private const int PLAYER_ATTACK_RATE = 2;
 
-        //Players that has confirmed that are connected
-        private List<string> p_connectedPlayers;
-
-        private Dictionary<int, int[,]> p_playerPositions;
-
-        private List<int>[,] p_gameMapInfo;
-
-        private int p_maxPlayers = 4;
+        private GameMap p_gameMap;
 
         /// <summary>
         /// Inicializa una instancia nueva de GameManagerActor
@@ -41,74 +183,73 @@ namespace GameManagerActor
         public GameManagerActor(ActorService actorService, ActorId actorId)
             : base(actorService, actorId)
         {
-            p_playerList = new List<string>();
-            p_connectedPlayers = new List<string>();
+            p_gameMap = new GameMap();
         }
 
-        public Task PlayerAttacks(string i_playerId)
+        public async Task PlayerAttacksAsync(string i_playerId)
         {
-            throw new NotImplementedException();
+            List<int[]> i_hitList;
+            Dictionary<string, int[]> i_killedPlayersDict;
+            p_gameMap.PlayerAttacks(i_playerId,PLAYER_ATTACK_RATE,out i_hitList,out i_killedPlayersDict);
+            var ev = GetEvent<IGameEvents>();
+            ev.BombHits(i_hitList);
+            if (i_killedPlayersDict.Count > 0)
+                foreach (string killedPlayerId in i_killedPlayersDict.Keys)
+                {
+                    ev.PlayerKilled(killedPlayerId, i_playerId, i_killedPlayersDict[killedPlayerId]);
+                }
         }
 
         public async Task PlayerDisconnectAsync(string i_playerId)
         {
-            p_playerList.Remove(i_playerId);
-            p_connectedPlayers.Remove(i_playerId);
-            if (p_connectedPlayers.Count == 0)
+            p_gameMap.DisconnectPlayer(i_playerId);
+            if (p_gameMap.connectedPlayerCount == 0)
             {
                 IActorReminder reminder = GetReminder("LobbyCheck");
                 await UnregisterReminderAsync(reminder);
             }
+
+            //Actualizar para durante juego
         }
 
-        public Task PlayerMoves(int[,] i_dir, string i_playerId)
+        public async Task PlayerMovesAsync(int[] i_dir, string i_playerId)
         {
-            throw new NotImplementedException();
-        }
+            int[] playerPos = null;
+            string killedPlayer = null;
+            int result = p_gameMap.MovePlayer(i_dir, i_playerId, ref playerPos, ref killedPlayer);
+            if (result > 0)
+            {
+                var ev = GetEvent<IGameEvents>();
+                if (result == 1)
+                    ev.PlayerDead(i_playerId, 0, playerPos);
+                if (result == 2)
+                    ev.PlayerKilled(killedPlayer, i_playerId, playerPos);
+            }
 
+        }
         //!!!!!Player Id collision problem
         public async Task<bool> PlayerRegisterAsync(string i_playerId)
         {
-            if (p_playerList.Count < p_maxPlayers)
-            {
-                if (p_playerList.Count == 0)
-                    await this.RegisterReminderAsync("LobbyCheck", null, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
-                p_playerList.Add(i_playerId);
-                p_connectedPlayers.Add(i_playerId);
-                return true;
-            }
-            return false;
+            if (p_gameMap.playerCount == 0)
+                await this.RegisterReminderAsync("LobbyCheck", null, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
+            return p_gameMap.ConnectPlayer(i_playerId);
         }
 
         public async Task PlayerStillConnectedAsync(string i_playerId)
         {
-            if (!p_connectedPlayers.Contains(i_playerId))
-                p_connectedPlayers.Add(i_playerId);
+            p_gameMap.PlayerConnected(i_playerId);
         }
 
         public async Task UpdateLobbyInfoAsync()
         {
             var ev = GetEvent<IGameLobbyEvents>();
-            ev.GameLobbyInfoUpdate(p_playerList);
+            ev.GameLobbyInfoUpdate(p_gameMap.playerList);
         }
 
         public async Task ReceiveReminderAsync(string reminderName, byte[] context, TimeSpan dueTime, TimeSpan period)
         {
             if (reminderName.Equals("LobbyCheck"))
-            {
-                for (int i=0; i<p_playerList.Count; i++)
-                {
-                    if (p_connectedPlayers.Contains(p_playerList[i]))
-                    {
-                        p_connectedPlayers.Remove(p_playerList[i]);
-                    }
-                    else
-                    {
-                        await PlayerDisconnectAsync(p_playerList[i]);
-                        i--;
-                    }
-                }
-            }
+                await p_gameMap.CheckLobbyAsync();
             await UpdateLobbyInfoAsync();
         }
     }
