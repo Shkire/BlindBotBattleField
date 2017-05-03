@@ -34,12 +34,25 @@ namespace GameManagerActor.Interfaces
                 return p_playerId;
             }
         }
+
+        public MapInfo(string i_playerId)
+        {
+            p_content = CellContent.Player;
+            p_playerId = i_playerId;
+        }
+
+        public MapInfo()
+        {
+            p_content = CellContent.Hole;
+        }
     }
 
     public interface IGameLobbyEvents : IActorEvents
     {
         //!!!!!Define Event params
         void GameLobbyInfoUpdate(List<string> o_playerIdMap);
+
+        void GameStart();
     }
 
     public interface IGameEvents : IActorEvents
@@ -55,7 +68,7 @@ namespace GameManagerActor.Interfaces
     /// GameManager Actor Interface.
     /// Contains all actor methods and other actors or client can call it using this Interface.
     /// </summary>
-    public interface IGameManagerActor : IActor, IActorEventPublisher<IGameLobbyEvents>
+    public interface IGameManagerActor : IActor, IActorEventPublisher<IGameLobbyEvents>, IActorEventPublisher<IGameEvents>
     {
         Task<bool> PlayerRegisterAsync(string i_playerId);
 
@@ -66,6 +79,8 @@ namespace GameManagerActor.Interfaces
         Task PlayerDisconnectAsync(string i_playerId);
 
         Task UpdateLobbyInfoAsync();
+
+        Task StartGameAsync();
 
         Task PlayerStillConnectedAsync(string i_playerId);
     }
