@@ -11,6 +11,8 @@ namespace GameManagerActor.Interfaces
     {
         public enum CellContent
         {
+            None,
+            Floor,
             Hole,
             Player
         }
