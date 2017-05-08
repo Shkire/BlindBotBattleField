@@ -13,3 +13,18 @@ C:\Users\danie\Documents\Visual Studio 2015\Projects\BlindBotBattleField\Client\
 C:\Users\danie\Documents\Visual Studio 2015\Projects\BlindBotBattleField\Client\Client\obj\Debug\Client.exe
 C:\Users\danie\Documents\Visual Studio 2015\Projects\BlindBotBattleField\Client\Client\obj\Debug\Client.pdb
 C:\Users\danie\Documents\Visual Studio 2015\Projects\BlindBotBattleField\Client\Client\obj\Debug\Client.csprojResolveAssemblyReference.cache
+C:\Users\danie\Documents\GitHub\BlindBotBattleField\Client\Client\bin\Debug\Client.exe.config
+C:\Users\danie\Documents\GitHub\BlindBotBattleField\Client\Client\obj\Debug\Client.exe
+C:\Users\danie\Documents\GitHub\BlindBotBattleField\Client\Client\obj\Debug\Client.pdb
+C:\Users\danie\Documents\GitHub\BlindBotBattleField\Client\Client\bin\Debug\Client.exe
+C:\Users\danie\Documents\GitHub\BlindBotBattleField\Client\Client\bin\Debug\Client.pdb
+C:\Users\danie\Documents\GitHub\BlindBotBattleField\Client\Client\bin\Debug\GameManagerActor.Interfaces.dll
+C:\Users\danie\Documents\GitHub\BlindBotBattleField\Client\Client\bin\Debug\Microsoft.ServiceFabric.Actors.dll
+C:\Users\danie\Documents\GitHub\BlindBotBattleField\Client\Client\bin\Debug\Microsoft.ServiceFabric.Internal.dll
+C:\Users\danie\Documents\GitHub\BlindBotBattleField\Client\Client\bin\Debug\Microsoft.ServiceFabric.Services.dll
+C:\Users\danie\Documents\GitHub\BlindBotBattleField\Client\Client\bin\Debug\ServiceFabricServiceModel.dll
+C:\Users\danie\Documents\GitHub\BlindBotBattleField\Client\Client\bin\Debug\Microsoft.ServiceFabric.Internal.Strings.dll
+C:\Users\danie\Documents\GitHub\BlindBotBattleField\Client\Client\bin\Debug\GameManagerActor.Interfaces.pdb
+C:\Users\danie\Documents\GitHub\BlindBotBattleField\Client\Client\bin\Debug\Microsoft.ServiceFabric.Actors.xml
+C:\Users\danie\Documents\GitHub\BlindBotBattleField\Client\Client\bin\Debug\Microsoft.ServiceFabric.Services.xml
+C:\Users\danie\Documents\GitHub\BlindBotBattleField\Client\Client\obj\Debug\Client.csprojResolveAssemblyReference.cache

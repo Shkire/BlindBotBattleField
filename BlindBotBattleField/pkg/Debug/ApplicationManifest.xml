@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<ApplicationManifest xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" ApplicationTypeName="BlindBotBattleFieldType" ApplicationTypeVersion="1.0.0" xmlns="http://schemas.microsoft.com/2011/01/fabric">
+<ApplicationManifest xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" ApplicationTypeName="BlindBotBattleFieldType" ApplicationTypeVersion="1.0.0" xmlns="http://schemas.microsoft.com/2011/01/fabric" ___CorrelationId___="6926d372-e236-47fc-8ec7-78a86504a769">
   <Parameters>
     <Parameter Name="GameManagerActorService_PartitionCount" DefaultValue="10" />
     <Parameter Name="GameManagerActorService_MinReplicaSetSize" DefaultValue="3" />

@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<ServiceManifest xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Name="GameManagerActorPkg" Version="1.0.0" xmlns="http://schemas.microsoft.com/2011/01/fabric">
+<ServiceManifest xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Name="GameManagerActorPkg" Version="1.0.0" xmlns="http://schemas.microsoft.com/2011/01/fabric" ___CorrelationId___="c3b8e2ce-70c0-4ece-8bcd-e29592702297">
   <ServiceTypes>
     <StatefulServiceType ServiceTypeName="GameManagerActorServiceType" HasPersistedState="true">
       <Extensions>

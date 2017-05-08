@@ -10,23 +10,13 @@ using static GameManagerActor.Interfaces.MapInfo;
 
 namespace Client
 {
-    
-    class ClientGameManager
-    {
-    }
 
     class LobbyEventsHandler : IGameLobbyEvents
     {
-        private IGameManagerActor p_actor;
-
-        private string p_playerId;
-
         private GameManager p_gameManager;
 
-        public LobbyEventsHandler(GameManager i_gameManager, IGameManagerActor i_actor, string i_playerId)
+        public LobbyEventsHandler(GameManager i_gameManager)
         {
-            p_actor = i_actor;
-            p_playerId = i_playerId;
             p_gameManager = i_gameManager;
         }
 
@@ -37,14 +27,14 @@ namespace Client
             {
                 Console.WriteLine((i+1).ToString()+". "+i_playerIdMap[i]);
             }
-            p_actor.PlayerStillConnectedAsync(p_playerId);
+            p_gameManager.PlayerStillConnected();
         }
 
         public void GameStart()
         {
             p_gameManager.state = 2;
-            p_gameManager.Init(new int[] { 0, 0 }, 5, p_actor);
-            p_actor.SubscribeAsync<IGameEvents>(new GameEventsHandler(p_gameManager, p_playerId));
+            p_gameManager.Init(new int[] { 0, 0 }, 5);
+            p_gameManager.SubscribeToGameEvents();
         }
     }
 
@@ -53,12 +43,9 @@ namespace Client
 
         private GameManager p_gameManager;
 
-        private string p_playerName;
-
-        public GameEventsHandler(GameManager i_gameManager, string i_playerId)
+        public GameEventsHandler(GameManager i_gameManager)
         {
             p_gameManager = i_gameManager;
-            p_playerName = i_playerId;
         }
 
         public void BombHits(List<int[]> o_hitList)
@@ -84,22 +71,57 @@ namespace Client
         private int[] p_playerPosVirt;
         private CellContent[,] p_playerSight;
         private IGameManagerActor p_actor;
+        public string playerName;
+
+        public IGameManagerActor actor
+        {
+            set
+            {
+                p_actor = value;
+            }
+        }
 
         public GameManager()
         {
             state = 1;
         }
 
-        public void Init(int[] i_iniPlayerPos, int i_playerSightRange, IGameManagerActor i_actor)
+        public bool PlayerRegistration()
+        {
+            return p_actor.PlayerRegisterAsync(playerName).Result;
+        }
+
+        public void PlayerStillConnected()
+        {
+            p_actor.PlayerStillConnectedAsync(playerName);
+        }
+
+        public void SubscribeToLobbyEvents()
+        {
+            p_actor.SubscribeAsync<IGameLobbyEvents>(new LobbyEventsHandler(this));
+        }
+
+        public void SubscribeToGameEvents()
+        {
+            p_actor.SubscribeAsync<IGameEvents>(new GameEventsHandler(this));
+        }
+
+        public void UpdateLobby()
+        {
+            p_actor.UpdateLobbyInfoAsync();
+        }
+
+        public void Init(int[] i_iniPlayerPos, int i_playerSightRange)
         {
             p_playerPosReal = i_iniPlayerPos;
             p_playerPosVirt = new int[] { (int)Math.Truncate(i_playerSightRange / 2f), (int)Math.Truncate(i_playerSightRange / 2f) };
             p_playerSight = new CellContent[i_playerSightRange, i_playerSightRange];
-            p_actor = i_actor;
         }
 
         public void MovePlayer(int[] i_dir)
         {
+            Task.WaitAll(p_actor.PlayerMovesAsync(i_dir, playerName));
+
             p_playerSight[p_playerPosVirt[0], p_playerPosVirt[1]] = CellContent.Floor;
             int iniXPos = 0;
             int iniYPos = 0;
@@ -129,6 +151,11 @@ namespace Client
                 }
             }
             RefreshClient();
+        }
+
+        public void PlayerAttacks()
+        {
+            p_actor.PlayerAttacksAsync(playerName);
         }
 
         public void RefreshClient()
@@ -168,22 +195,20 @@ namespace Client
         {
             bool exit = false;
             GameManager gameManager = new GameManager();
-            IGameManagerActor actor = null;
-            string playerName = null;
             while (!exit)
             {
                 if (gameManager.state == 1)
                 {
                     Console.WriteLine("Choose your player name:");
-                    playerName = Console.ReadLine();
+                    gameManager.playerName = Console.ReadLine();
                     Console.WriteLine("Connecting server...");
-                    actor = ActorProxy.Create<IGameManagerActor>(new ActorId("Manager"), APP_NAME);
-                    bool registrationSuccess = actor.PlayerRegisterAsync(playerName).Result;
+                    gameManager.actor = ActorProxy.Create<IGameManagerActor>(new ActorId("Manager"), APP_NAME);
+                    bool registrationSuccess = gameManager.PlayerRegistration();
                     if (registrationSuccess)
                     {
                         Console.WriteLine("Success");
-                        actor.SubscribeAsync<IGameLobbyEvents>(new LobbyEventsHandler(gameManager, actor, playerName));
-                        actor.UpdateLobbyInfoAsync();
+                        gameManager.SubscribeToLobbyEvents();
+                        gameManager.UpdateLobby();
                         Console.WriteLine("Waiting");
                     }
                     else
@@ -196,34 +221,19 @@ namespace Client
                     Console.WriteLine("Juego Comenzado");
                 }
                 var key = Console.ReadKey();
-                int[] desp = new int[] { 0,0};
-                if (gameManager.state == 2 && key.Key.Equals(ConsoleKey.UpArrow))
+                switch (key.Key)
                 {
-                    desp = new int[] { 0, 1 };
-                    actor.PlayerMovesAsync(desp, playerName);
-                    gameManager.MovePlayer(desp);
+                    case ConsoleKey.UpArrow: gameManager.MovePlayer(new int[] { 0, 1 }); ;
+                        break;
+                    case ConsoleKey.DownArrow: gameManager.MovePlayer(new int[] { 0, -1 });
+                        break;
+                    case ConsoleKey.RightArrow: gameManager.MovePlayer(new int[] { 1, 0 });
+                        break;
+                    case ConsoleKey.LeftArrow: gameManager.MovePlayer(new int[] { -1, 0 });
+                        break;
+                    case ConsoleKey.Enter: gameManager.PlayerAttacks();
+                        break;
                 }
-                else if (gameManager.state == 2 && key.Key.Equals(ConsoleKey.DownArrow))
-                {
-                    desp = new int[] { 0, -1 };
-                    actor.PlayerMovesAsync(desp, playerName);
-                    gameManager.MovePlayer(desp);
-                }
-                else if (gameManager.state == 2 && key.Key.Equals(ConsoleKey.RightArrow))
-                {
-                    desp = new int[] { 1, 0 };
-                    actor.PlayerMovesAsync(desp, playerName);
-                    gameManager.MovePlayer(desp);
-                }
-                else if (gameManager.state == 2 && key.Key.Equals(ConsoleKey.LeftArrow))
-                {
-                    desp = new int[] { -1, 0 };
-                    actor.PlayerMovesAsync(desp, playerName);
-                    gameManager.MovePlayer(desp);
-                }
-                else if (gameManager.state == 2 && key.Key.Equals(ConsoleKey.Enter))
-                    actor.PlayerAttacksAsync(playerName);
-                Console.WriteLine("Mueve " + desp[0] + "," + desp[1]);
             }
         }
     }
