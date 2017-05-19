@@ -130,22 +130,19 @@ namespace GameManagerActor
             int result = -1;
             if (!p_deadPlayers.Contains(i_playerId))
             {
-                ActorEventSource.Current.Message("Jugador reconocido");
                 result = 0;
                 int[] playerPos = p_playerPositions[i_playerId];
-                ActorEventSource.Current.Message("Posicion {0},{1}",playerPos[0],playerPos[1]);
                 int[] destPos = new int[] { playerPos[0] + i_dir[0], playerPos[1] + i_dir[1] };
-                ActorEventSource.Current.Message("Posicion destino {0},{1}", destPos[0], destPos[1]);
-                MapInfo destPosInfo = p_gameMapInfo[destPos[0],destPos[1]];
-                if (destPosInfo != null)
+                MapInfo destPosInfo = null;
+                bool outOfBounds = false;
+                if (destPos[0] < 0 || destPos[0] >= p_gameMapInfo.GetLength(0) || destPos[1] < 0 || destPos[1] >= p_gameMapInfo.GetLength(1))
+                    outOfBounds = true;
+                else
                 {
-                    ActorEventSource.Current.Message("Informacion destino {0}", destPosInfo.content);
-                    if (destPosInfo.content.Equals(CellContent.Player))
-                        ActorEventSource.Current.Message("Informacion jugador {0}", destPosInfo.playerId);
+                    destPosInfo = p_gameMapInfo[destPos[0], destPos[1]];
                 }
-                if (destPosInfo != null && destPosInfo.content.Equals(CellContent.Hole))
+                if (outOfBounds || (destPosInfo != null && destPosInfo.content.Equals(CellContent.Hole)))
                 {
-                    ActorEventSource.Current.Message("Agujero");
                     p_deadPlayers.Add(i_playerId);
                     p_gameMapInfo[playerPos[0], playerPos[1]] = null;
                     o_playerPos = new int[] { playerPos[0] + i_dir[0], playerPos[1] + i_dir[1] };
@@ -153,10 +150,8 @@ namespace GameManagerActor
                 }
                 else
                 {
-                    ActorEventSource.Current.Message("No hay agujero");
                     if (destPosInfo!= null && destPosInfo.content.Equals(CellContent.Player))
                     {
-                        ActorEventSource.Current.Message("Habia un jugador");
                         o_killedPlayer = destPosInfo.playerId;
                         p_deadPlayers.Add(o_killedPlayer);
                         o_playerPos = new int[] { playerPos[0] + i_dir[0], playerPos[1] + i_dir[1] };
@@ -180,25 +175,63 @@ namespace GameManagerActor
             {
                 for (int i = -i_attackRate; i <= i_attackRate; i++)
                 {
-                    for (int j = -(i_attackRate - Math.Abs(i)); Math.Abs(i) + Math.Abs(j) <= i_attackRate; i++)
+                    for (int j = -(i_attackRate - Math.Abs(i)); j <= i_attackRate - Math.Abs(i); j++)
                     {
-                        if (p_gameMapInfo[p_playerPositions[i_playerId][0] + i, p_playerPositions[i_playerId][1] + j] != null && p_gameMapInfo[p_playerPositions[i_playerId][0] + i, p_playerPositions[i_playerId][1] + j].content.Equals(CellContent.Player))
+                        int[] hitPos = new int[] { p_playerPositions[i_playerId][0] + i, p_playerPositions[i_playerId][1] + j };
+                        bool outOfBounds = false;
+                        if (hitPos[0] < 0 || hitPos[0] >= p_gameMapInfo.GetLength(0) || hitPos[1] < 0 || hitPos[1] >= p_gameMapInfo.GetLength(1))
+                            outOfBounds = true;
+                        if (!outOfBounds && p_gameMapInfo[hitPos[0],hitPos[1]] != null && p_gameMapInfo[hitPos[0], hitPos[1]].content.Equals(CellContent.Player) && !p_gameMapInfo[hitPos[0], hitPos[1]].playerId.Equals(i_playerId))
                         {
                             string deadPlayer = p_gameMapInfo[p_playerPositions[i_playerId][0] + i, p_playerPositions[i_playerId][1] + j].playerId;
                             p_gameMapInfo[p_playerPositions[i_playerId][0] + i, p_playerPositions[i_playerId][1] + j] = null;
                             p_deadPlayers.Add(deadPlayer);
 
-                            o_killedPlayersDict.Add(deadPlayer, new int[] { p_playerPositions[i_playerId][0] + i, p_playerPositions[i_playerId][1] + j });
+                            o_killedPlayersDict.Add(deadPlayer, hitPos);
                         }
                         else
                         {
-                            o_hitPoints.Add(new int[] { p_playerPositions[i_playerId][0] + i, p_playerPositions[i_playerId][1] + j });
+                            o_hitPoints.Add(hitPos);
                         }
                     }
                 }
             }
         }
 
+        public int[] GetPlayerPos(string i_playerId)
+        {
+            return p_playerPositions[i_playerId];
+        }
+
+        public CellContent[][] RadarActivated(string i_playerId)
+        {
+            CellContent[][] res = new CellContent[5][];
+            for (int i = 0; i < 5; i++)
+            {
+                res[i] = new CellContent[5];
+            }
+            int[] playerPosReal = p_playerPositions[i_playerId];
+            int[] playerPosVirt = new int[] { (int)Math.Floor(res.Length / 2f), (int)Math.Floor(res[0].Length/2f) };
+            for (int i = 0; i < res.Length; i++)
+            {
+                for (int j = 0; j < res[0].Length; j++)
+                {
+                    if (i!=playerPosVirt[0] || j!=playerPosVirt[1])
+                    {
+                        int[] realPos = new int[] { playerPosReal[0] - playerPosVirt[0] + i, playerPosReal[1] - playerPosVirt[1] + j };
+                        if ((realPos[0] < 0) || (realPos[0] >= p_gameMapInfo.GetLength(0)) || (realPos[1] < 0) || (realPos[1] >= p_gameMapInfo.GetLength(1)))
+                        {
+                            res[i][j] = CellContent.Hole;
+                        }
+                        else
+                        {
+                            res[i][j] = p_gameMapInfo[realPos[0], realPos[1]] == null ? CellContent.Floor : p_gameMapInfo[realPos[0], realPos[1]].content;
+                        }
+                    }
+                }
+            }
+            return res;
+        }
     }
 
     /// <remarks>
@@ -258,7 +291,6 @@ namespace GameManagerActor
 
         public async Task PlayerMovesAsync(int[] i_dir, string i_playerId)
         {
-            ActorEventSource.Current.Message("Jugador "+i_playerId+" se mueve "+i_dir[0]+","+i_dir[1]);
             int[] playerPos = null;
             string killedPlayer = null;
             int result = p_gameMap.MovePlayer(i_dir, i_playerId, ref playerPos, ref killedPlayer);
@@ -313,6 +345,24 @@ namespace GameManagerActor
             }
             else
                 await UpdateLobbyInfoAsync();
+        }
+
+        public Task<int[]> GetPlayerPos(string i_playerId)
+        {
+            /*
+            ActorEventSource.Current.Message("Getting position");
+            ActorEventSource.Current.Message("Player {0}",i_playerId);
+            ActorEventSource.Current.Message("Position {0},{1}", p_gameMap.GetPlayerPos(i_playerId)[0], p_gameMap.GetPlayerPos(i_playerId)[1]);
+            */
+            int[] res = p_gameMap.GetPlayerPos(i_playerId);
+            return Task.FromResult(res);
+        }
+
+        public Task<CellContent[][]> RadarActivated(string i_playerId)
+        {
+            var ev = GetEvent<IGameEvents>();
+            ev.RadarUsed(p_gameMap.GetPlayerPos(i_playerId));
+            return Task.FromResult(p_gameMap.RadarActivated(i_playerId));
         }
     }
 }

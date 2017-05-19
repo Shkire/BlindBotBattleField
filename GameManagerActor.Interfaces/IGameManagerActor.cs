@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.ServiceFabric.Actors;
+using static GameManagerActor.Interfaces.MapInfo;
 
 namespace GameManagerActor.Interfaces
 {
@@ -14,7 +15,9 @@ namespace GameManagerActor.Interfaces
             None,
             Floor,
             Hole,
-            Player
+            Player,
+            Dead,
+            Hit
         }
 
         private CellContent p_content;
@@ -64,6 +67,8 @@ namespace GameManagerActor.Interfaces
         void PlayerDead(string o_playerId, int o_reason, int[] o_playerPos);
 
         void BombHits(List<int[]> o_hitList);
+
+        void RadarUsed(int[] o_playerPos);
     }
 
     /// <summary>
@@ -85,5 +90,9 @@ namespace GameManagerActor.Interfaces
         Task StartGameAsync();
 
         Task PlayerStillConnectedAsync(string i_playerId);
+
+        Task<int[]> GetPlayerPos(string i_playerId);
+
+        Task<CellContent[][]> RadarActivated(string i_playerId);
     }
 }

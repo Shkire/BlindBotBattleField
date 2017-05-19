@@ -33,6 +33,6 @@ C:\Users\danie\Documents\GitHub\BlindBotBattleField\GameManagerActor.Interfaces\
 C:\Users\danie\Documents\GitHub\BlindBotBattleField\GameManagerActor.Interfaces\bin\x64\Debug\Microsoft.ServiceFabric.Data.Interfaces.xml
 C:\Users\danie\Documents\GitHub\BlindBotBattleField\GameManagerActor.Interfaces\bin\x64\Debug\Microsoft.ServiceFabric.Services.xml
 C:\Users\danie\Documents\GitHub\BlindBotBattleField\GameManagerActor.Interfaces\bin\x64\Debug\System.Fabric.xml
-C:\Users\danie\Documents\GitHub\BlindBotBattleField\GameManagerActor.Interfaces\obj\x64\Debug\GameManagerActor.Interfaces.csprojResolveAssemblyReference.cache
 C:\Users\danie\Documents\GitHub\BlindBotBattleField\GameManagerActor.Interfaces\obj\x64\Debug\GameManagerActor.Interfaces.dll
 C:\Users\danie\Documents\GitHub\BlindBotBattleField\GameManagerActor.Interfaces\obj\x64\Debug\GameManagerActor.Interfaces.pdb
+C:\Users\danie\Documents\GitHub\BlindBotBattleField\GameManagerActor.Interfaces\obj\x64\Debug\GameManagerActor.Interfaces.csprojResolveAssemblyReference.cache
