@@ -30,7 +30,6 @@ C:\Users\danie\Documents\GitHub\BlindBotBattleField\GameManagerActor\bin\x64\Deb
 C:\Users\danie\Documents\GitHub\BlindBotBattleField\GameManagerActor\bin\x64\Debug\Microsoft.ServiceFabric.Internal.dll
 C:\Users\danie\Documents\GitHub\BlindBotBattleField\GameManagerActor\bin\x64\Debug\Microsoft.ServiceFabric.Internal.Strings.dll
 C:\Users\danie\Documents\GitHub\BlindBotBattleField\GameManagerActor\bin\x64\Debug\Microsoft.ServiceFabric.Services.dll
-C:\Users\danie\Documents\GitHub\BlindBotBattleField\GameManagerActor\bin\x64\Debug\ServiceFabricServiceModel.dll
 C:\Users\danie\Documents\GitHub\BlindBotBattleField\GameManagerActor\bin\x64\Debug\System.Fabric.dll
 C:\Users\danie\Documents\GitHub\BlindBotBattleField\GameManagerActor\bin\x64\Debug\System.Fabric.Strings.dll
 C:\Users\danie\Documents\GitHub\BlindBotBattleField\GameManagerActor\bin\x64\Debug\GameManagerActor.Interfaces.pdb
@@ -42,3 +41,9 @@ C:\Users\danie\Documents\GitHub\BlindBotBattleField\GameManagerActor\bin\x64\Deb
 C:\Users\danie\Documents\GitHub\BlindBotBattleField\GameManagerActor\obj\x64\Debug\GameManagerActor.csprojResolveAssemblyReference.cache
 C:\Users\danie\Documents\GitHub\BlindBotBattleField\GameManagerActor\obj\x64\Debug\GameManagerActor.exe
 C:\Users\danie\Documents\GitHub\BlindBotBattleField\GameManagerActor\obj\x64\Debug\GameManagerActor.pdb
+C:\Users\danie\Documents\GitHub\BlindBotBattleField\GameManagerActor\bin\x64\Debug\System.Fabric.Management.ServiceModel.dll
+C:\Users\danie\Documents\GitHub\BlindBotBattleField\GameManagerActor\bin\x64\Debug\System.Fabric.Management.ServiceModel.XmlSerializers.dll
+C:\Users\danie\Documents\GitHub\BlindBotBattleField\GameManagerActor\bin\x64\Debug\Microsoft.ServiceFabric.FabricTransport.dll
+C:\Users\danie\Documents\GitHub\BlindBotBattleField\GameManagerActor\bin\x64\Debug\Microsoft.ServiceFabric.Services.Remoting.dll
+C:\Users\danie\Documents\GitHub\BlindBotBattleField\GameManagerActor\bin\x64\Debug\Microsoft.ServiceFabric.FabricTransport.xml
+C:\Users\danie\Documents\GitHub\BlindBotBattleField\GameManagerActor\bin\x64\Debug\Microsoft.ServiceFabric.Services.Remoting.xml

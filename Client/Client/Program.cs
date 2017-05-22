@@ -1,6 +1,8 @@
 ﻿using GameManagerActor.Interfaces;
+using LoginService.Interfaces;
 using Microsoft.ServiceFabric.Actors;
 using Microsoft.ServiceFabric.Actors.Client;
+using Microsoft.ServiceFabric.Services.Remoting.Client;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -77,13 +79,23 @@ namespace Client
         private CellContent[,] p_playerSight;
         private int p_playerSightRange = 5;
         private IGameManagerActor p_actor;
+        private ILoginService p_service;
         public string playerName;
+        public string pass;
 
         public IGameManagerActor actor
         {
             set
             {
                 p_actor = value;
+            }
+        }
+
+        public ILoginService service
+        {
+            set
+            {
+                p_service = value;
             }
         }
 
@@ -94,7 +106,7 @@ namespace Client
 
         public bool PlayerRegistration()
         {
-            return p_actor.PlayerRegisterAsync(playerName).Result;
+            return p_service.Login(playerName,pass).Result && p_actor.PlayerRegisterAsync(playerName).Result;
         }
 
         public void PlayerStillConnected()
@@ -254,7 +266,6 @@ namespace Client
 
     class Program
     {
-
         const string APP_NAME = "fabric:/BlindBotBattleField";
 
         static void Main(string[] args)
@@ -265,8 +276,11 @@ namespace Client
             {
                 if (gameManager.state == 1)
                 {
+                    gameManager.service = ServiceProxy.Create<ILoginService>(new Uri(APP_NAME + "/LoginService"));
                     Console.WriteLine("Choose your player name:");
                     gameManager.playerName = Console.ReadLine();
+                    Console.WriteLine("Password:");
+                    gameManager.pass = Console.ReadLine();
                     Console.WriteLine("Connecting server...");
                     gameManager.actor = ActorProxy.Create<IGameManagerActor>(new ActorId("Manager"), APP_NAME);
                     bool registrationSuccess = gameManager.PlayerRegistration();
