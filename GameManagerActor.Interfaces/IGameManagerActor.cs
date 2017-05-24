@@ -8,6 +8,7 @@ using static GameManagerActor.Interfaces.MapInfo;
 
 namespace GameManagerActor.Interfaces
 {
+    [Serializable]
     public class MapInfo
     {
         public enum CellContent
@@ -91,8 +92,8 @@ namespace GameManagerActor.Interfaces
 
         Task PlayerStillConnectedAsync(string i_playerId);
 
-        Task<int[]> GetPlayerPos(string i_playerId);
+        Task<int[]> GetPlayerPosAsync(string i_playerId);
 
-        Task<CellContent[][]> RadarActivated(string i_playerId);
+        Task<CellContent[][]> RadarActivatedAsync(string i_playerId);
     }
 }

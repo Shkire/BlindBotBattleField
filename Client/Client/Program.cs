@@ -19,6 +19,7 @@ namespace Client
 
         public LobbyEventsHandler(GameManager i_gameManager)
         {
+            Task.Run(() => { });
             p_gameManager = i_gameManager;
         }
 
@@ -131,9 +132,17 @@ namespace Client
 
         public void StartGame()
         {
+            Task.Run(() => { });
             state = 2;
             p_playerPosReal = new int[] { 0, 0 };
-            //p_playerPosReal = p_actor.GetPlayerPos(playerName).Result;
+            /*
+            Console.WriteLine("Getting Pos");
+            Task<int[]> resTask = p_actor.GetPlayerPosAsync(playerName);
+            while (!resTask.IsCompleted)
+                Console.WriteLine("Waiting");
+            p_playerPosReal = resTask.Result;
+            Console.WriteLine("Pos gotten");
+            */
             p_playerPosVirt = new int[] { (int)Math.Truncate(p_playerSightRange / 2f), (int)Math.Truncate(p_playerSightRange / 2f) };
             p_playerSight = new CellContent[p_playerSightRange, p_playerSightRange];
             SubscribeToGameEvents();
@@ -179,13 +188,13 @@ namespace Client
 
         public void PlayerAttacks()
         {
-            p_actor.PlayerAttacksAsync(playerName);
+            Task.WaitAll(p_actor.PlayerAttacksAsync(playerName));
             Console.Beep();
         }
 
         public void RadarUsed()
         {
-            CellContent[][] res = p_actor.RadarActivated(playerName).Result;
+            CellContent[][] res = p_actor.RadarActivatedAsync(playerName).Result;
             for (int i = 0; i < p_playerSight.GetLength(0); i++)
             {
                 for (int j = 0; j < p_playerSight.GetLength(1); j++)

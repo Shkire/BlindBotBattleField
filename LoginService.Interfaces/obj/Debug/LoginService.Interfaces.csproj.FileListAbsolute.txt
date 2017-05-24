@@ -19,3 +19,4 @@ C:\Users\danie\Documents\GitHub\BlindBotBattleField\LoginService.Interfaces\bin\
 C:\Users\danie\Documents\GitHub\BlindBotBattleField\LoginService.Interfaces\bin\x64\Debug\System.Fabric.xml
 C:\Users\danie\Documents\GitHub\BlindBotBattleField\LoginService.Interfaces\obj\Debug\LoginService.Interfaces.dll
 C:\Users\danie\Documents\GitHub\BlindBotBattleField\LoginService.Interfaces\obj\Debug\LoginService.Interfaces.pdb
+C:\Users\danie\Documents\GitHub\BlindBotBattleField\LoginService.Interfaces\obj\Debug\LoginService.Interfaces.csprojResolveAssemblyReference.cache
