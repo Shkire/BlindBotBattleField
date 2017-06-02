@@ -8,6 +8,9 @@ using Microsoft.ServiceFabric.Actors.Runtime;
 using Microsoft.ServiceFabric.Actors.Client;
 using GameManagerActor.Interfaces;
 using static GameManagerActor.Interfaces.MapInfo;
+using static GameManagerActor.GameMap;
+using Microsoft.ServiceFabric.Services.Remoting.Client;
+using LoginService.Interfaces;
 
 namespace GameManagerActor
 {
@@ -16,17 +19,22 @@ namespace GameManagerActor
     {
         //List of players on this game
         private List<string> p_playerList;
-
         //Players that has confirmed that are connected
         private List<string> p_connectedPlayers;
-
         private int p_maxPlayers = 2;
-
         private Dictionary<string, int[]> p_playerPositions;
-
         private MapInfo[][] p_gameMapInfo;
-
         private List<string> p_deadPlayers;
+        public GameState state;
+
+        public enum GameState
+        {
+            Lobby,
+            Game,
+            Results
+        }
+
+        #region GETTERS_AND_SETTERS
 
         public int playerCount
         {
@@ -60,7 +68,9 @@ namespace GameManagerActor
             }
         }
 
-        public GameMap(GameManagerActor i_actor)
+        #endregion
+
+        public GameMap()
         {
             p_playerList = new List<string>();
             p_connectedPlayers = new List<string>();
@@ -68,7 +78,83 @@ namespace GameManagerActor
             p_deadPlayers = new List<string>();
         }
 
-        public void Initialize()
+        /// <summary>
+        /// Tries to add player to game
+        /// </summary>
+        /// <param name="i_playerId">Player to add</param>
+        /// <returns>True if player could be added, false otherwise</returns>
+        public bool AddPlayer(string i_playerId)
+        {
+            //If game is in LobbyState and number of players is lower than max
+            if (state.Equals(GameState.Lobby) && p_playerList.Count < p_maxPlayers)
+            {
+                //Adds player to player list
+                p_playerList.Add(i_playerId);
+                //Adds player to list of players that still playing
+                p_connectedPlayers.Add(i_playerId);
+                //Player added correctly
+                return true;
+            }
+            //otherwise
+            return false;
+        }
+
+        /// <summary>
+        /// Adds player to list of players who still playing the game (or waiting in the lobby)
+        /// </summary>
+        /// <param name="i_playerId">Player that stills playing</param>
+        public void StillPlaying(string i_playerId)
+        {
+            //If player isn't on the list of players that still playing
+            if (!p_connectedPlayers.Contains(i_playerId))
+                //Adds it to the list
+                p_connectedPlayers.Add(i_playerId);
+        }
+
+        //ADD WHILE PLAYING??
+        /// <summary>
+        /// Removes player from game
+        /// </summary>
+        /// <param name="i_playerId">Player to remove</param>
+        public void RemovePlayer(string i_playerId)
+        {
+            //Removes player from players list and from list of players that still playing
+            p_playerList.Remove(i_playerId);
+            p_connectedPlayers.Remove(i_playerId);
+        }
+
+        /// <summary>
+        /// Checks which players still playing
+        /// </summary>
+        /// <returns>List of players that are not playing</returns>
+        public List<string> CheckPlayers()
+        {
+            //Creates list of players to remove
+            List<string> removedPlayers = new List<string>();
+            //For each player in game
+            foreach (string player in p_playerList)
+            {
+                //If player stills playing
+                if (p_connectedPlayers.Contains(player))
+                {
+                    //Removes player from list of players that still playing
+                    p_connectedPlayers.Remove(player);
+                }
+                //otherwise
+                else
+                {
+                    //Adds player to list of players to remove
+                    removedPlayers.Add(player);
+                }
+            }
+            //Returns list of players to remove
+            return removedPlayers;
+        }
+
+        /// <summary>
+        /// Prepares game for start playing
+        /// </summary>
+        public void PrepareGame()
         {
             p_gameMapInfo = new MapInfo[3][];
             for (int i = 0; i < 3; i++)
@@ -80,53 +166,29 @@ namespace GameManagerActor
             p_gameMapInfo[1][1] = new MapInfo();
         }
 
+        /// <summary>
+        /// Kills the player
+        /// </summary>
+        /// <param name="i_playerId">Player to kill</param>
         public void KillPlayer(string i_playerId)
         {
             p_playerList.Remove(i_playerId);
             p_deadPlayers.Add(i_playerId);
         }
 
-        public bool ConnectPlayer(string i_playerId)
+        //NEW TYPE TO RETURN?
+        /// <summary>
+        /// Moves the player and notifies if other player were killed with it
+        /// </summary>
+        /// <param name="i_dir">Movement vector</param>
+        /// <param name="i_playerId">Player to move</param>
+        /// <param name="o_playerPos">Player killed position</param>
+        /// <param name="o_killedPlayer">Player killed</param>
+        /// <returns>-1 if player isn't playing or is dead, 0 if player moved correctly, 1 if player died moving and 2 if player killed other player</returns>
+        public int MovePlayer(int[] i_dir, string i_playerId, out int[] o_playerPos, out string o_killedPlayer)
         {
-            if (p_playerList.Count < p_maxPlayers)
-            {
-                p_playerList.Add(i_playerId);
-                p_connectedPlayers.Add(i_playerId);
-                return true;
-            }
-            return false;
-        }
-
-        public void DisconnectPlayer(string i_playerId)
-        {
-            p_playerList.Remove(i_playerId);
-            p_connectedPlayers.Remove(i_playerId);
-        }
-
-        public void PlayerConnected(string i_playerId)
-        {
-            if (!p_connectedPlayers.Contains(i_playerId))
-                p_connectedPlayers.Add(i_playerId);
-        }
-
-        public void CheckLobbyAsync(out List<string> o_removedPlayers)
-        {
-            o_removedPlayers = new List<string>();
-            for (int i = 0; i < p_playerList.Count; i++)
-            {
-                if (p_connectedPlayers.Contains(p_playerList[i]))
-                {
-                    p_connectedPlayers.Remove(p_playerList[i]);
-                }
-                else
-                {
-                    o_removedPlayers.Add(p_playerList[i]);
-                }
-            }
-        }
-
-        public int MovePlayer(int[] i_dir, string i_playerId, ref int[] o_playerPos, ref string o_killedPlayer)
-        {
+            o_playerPos = new int[] { };
+            o_killedPlayer = string.Empty;
             int result = -1;
             ActorEventSource.Current.Message("Checking if dead");
             if (!p_deadPlayers.Contains(i_playerId))
@@ -170,6 +232,13 @@ namespace GameManagerActor
             return result;
         }
 
+        /// <summary>
+        /// Manages player attack and notifies where attacked the player and which players killed
+        /// </summary>
+        /// <param name="i_playerId">Player that attacks</param>
+        /// <param name="i_attackRate"></param>
+        /// <param name="o_hitPoints">List of position vectors of attack hits</param>
+        /// <param name="o_killedPlayersDict">Dictionary with player killed an their position</param>
         public void PlayerAttacks(string i_playerId, int i_attackRate, out List<int[]> o_hitPoints, out Dictionary<string,int[]> o_killedPlayersDict)
         {
             o_hitPoints = new List<int[]>();
@@ -202,11 +271,21 @@ namespace GameManagerActor
             }
         }
 
+        /// <summary>
+        /// Gets player position
+        /// </summary>
+        /// <param name="i_playerId">Player whose position will be returned</param>
+        /// <returns>Player position vector</returns>
         public int[] GetPlayerPos(string i_playerId)
         {
             return p_playerPositions[i_playerId];
         }
 
+        /// <summary>
+        /// Manages player's radar
+        /// </summary>
+        /// <param name="i_playerId">Player that used radar</param>
+        /// <returns>Map info for this player</returns>
         public CellContent[][] RadarActivated(string i_playerId)
         {
             CellContent[][] res = new CellContent[5][];
@@ -251,19 +330,132 @@ namespace GameManagerActor
     {
         private const int PLAYER_ATTACK_RATE = 2;
 
-        /// <summary>
-        /// Inicializa una instancia nueva de GameManagerActor
-        /// </summary>
-        /// <param name="actorService">El atributo Microsoft.ServiceFabric.Actors.Runtime.ActorService que hospedará esta instancia de actor.</param>
-        /// <param name="actorId">El atributo Microsoft.ServiceFabric.Actors.ActorId de esta instancia de actor.</param>
         public GameManagerActor(ActorService actorService, ActorId actorId)
             : base(actorService, actorId)
         {
-            Task.WaitAll(this.StateManager.SetStateAsync("gamemap",new GameMap(this)));
-            Task.WaitAll(this.StateManager.SetStateAsync("state", 0));
-            Task.WaitAll(this.StateManager.SaveStateAsync());
         }
 
+        /// <summary>
+        /// GameMap state initialization
+        /// </summary>
+        public async Task InitializeGameAsync()
+        {
+            //Creates GameMap
+            GameMap gameMap = new GameMap();
+            //Saves GameMap as "gamemap" state
+            await this.StateManager.SetStateAsync("gamemap", gameMap);
+        }
+
+        //RETURN STATE AS ENUM???
+        /// <summary>
+        /// Connect player to game
+        /// </summary>
+        /// <param name="i_playerId">Player to connect</param>
+        /// <returns>0 if player could be connected, 1 if game is full or started and 2 if game was removed</returns>
+        public async Task<int> ConnectPlayerAsync(string i_playerId)
+        {
+            try
+            {
+                //Get GameMap from StateManager
+                GameMap gameMap = await this.StateManager.GetStateAsync<GameMap>("gamemap");    
+                //Adds player to game if posible
+                if (gameMap.AddPlayer(i_playerId))
+                {
+                    //If first player in lobby
+                    if (gameMap.playerCount == 1)
+                        //Registers LobyCheck reminder
+                        await this.RegisterReminderAsync("LobbyCheck", null, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
+                    //Saves "gamemap" state
+                    await this.StateManager.SetStateAsync("gamemap", gameMap);
+                    ILoginService login = ServiceProxy.Create<ILoginService>(new Uri(ServiceUri.AbsoluteUri.Replace("GameManagerActorService", "LoginService")));
+                    await login.AddPlayerAsync(Id.ToString());
+                    //Returns 0 (player correctly connected)
+                    return 0;
+                }
+                //Saves "gamemap" state
+                await this.StateManager.SetStateAsync("gamemap", gameMap);
+                //Returns 1 (player couldn't be added: game full or started)
+                return 1;
+            }
+            //Catch exception if "gamemap" state doesn't exist
+            catch (Exception e)
+            {
+                //Returns 2 (player couldn't be added: game removed)
+                return 2;
+            }
+        }
+
+        /// <summary>
+        /// Send ActorEvent with lobby info to clients
+        /// </summary>
+        public async Task UpdateLobbyInfoAsync()
+        {
+            //Gets "gamemap" from StateManager
+            GameMap gameMap = await this.StateManager.GetStateAsync<GameMap>("gamemap");
+            //If game is in Lobby state
+            if (gameMap.state.Equals(GameState.Lobby))
+            {
+                //Gets IGameLobbyEvents and sends GameLobbyInfoUpdate event with list of players
+                var ev = GetEvent<IGameLobbyEvents>();
+                ev.GameLobbyInfoUpdate(gameMap.playerList);
+
+            }
+        }
+
+        /// <summary>
+        /// Recieves notification from player's client that player stills connected
+        /// </summary>
+        /// <param name="i_playerId">Player that stills connected</param>
+        public async Task PlayerStillConnectedAsync(string i_playerId)
+        {
+            //Gets "gamemap" from StateManager
+            GameMap gameMap = await this.StateManager.GetStateAsync<GameMap>("gamemap");
+            //Notifies that player stills connected
+            gameMap.StillPlaying(i_playerId);
+            //Saves "gamemap" state
+            await this.StateManager.SetStateAsync("gamemap", gameMap);
+        }
+
+        //REMOVE GAME WHEN NO PLAYERS (REMINDER)???
+        /// <summary>
+        /// Disconnect player from game
+        /// </summary>
+        /// <param name="i_playerId">Player to disconnect</param>
+        public async Task PlayerDisconnectAsync(string i_playerId)
+        {
+            //Gets "gamemap" from StateManagers
+            GameMap gameMap = await this.StateManager.GetStateAsync<GameMap>("gamemap");
+            //Removes player from game
+            gameMap.RemovePlayer(i_playerId);
+            //If game is in Lobby state and there's no players
+            if (gameMap.state.Equals(GameState.Lobby) && gameMap.connectedPlayerCount == 0)
+            {
+                //Gets LobbyCheck reminder and unregisters it
+                IActorReminder reminder = GetReminder("LobbyCheck");
+                await UnregisterReminderAsync(reminder);
+            }
+            //Saves "gamemap" state
+            await this.StateManager.SetStateAsync("gamemap", gameMap);
+            ILoginService login = ServiceProxy.Create<ILoginService>(new Uri(ServiceUri.AbsoluteUri.Replace("GameManagerActorService","LoginService")));
+            await login.RemovePlayerAsync(Id.ToString());
+        }
+
+        /*
+        /// <summary>
+        /// Notifies clients that game has been started
+        /// </summary>
+        public async Task StartGameAsync()
+        {
+            var ev = GetEvent<IGameLobbyEvents>();
+            ev.GameStart();
+        }
+        */
+
+        // UNCOMMENTED
+        /// <summary>
+        /// Manages player attack and notifies client about it
+        /// </summary>
+        /// <param name="i_playerId">Player that attacked</param>
         public async Task PlayerAttacksAsync(string i_playerId)
         {
             List<int[]> i_hitList;
@@ -280,28 +472,20 @@ namespace GameManagerActor
             await this.StateManager.SetStateAsync("gamemap", gameMap);
         }
 
-        public async Task PlayerDisconnectAsync(string i_playerId)
-        {
-            GameMap gameMap = await this.StateManager.GetStateAsync<GameMap>("gamemap");
-            gameMap.DisconnectPlayer(i_playerId);
-            if (gameMap.connectedPlayerCount == 0)
-            {
-                IActorReminder reminder = GetReminder("LobbyCheck");
-                await UnregisterReminderAsync(reminder);
-            }
-            await this.StateManager.SetStateAsync("gamemap", gameMap);
-
-            //Actualizar para durante juego
-        }
-
+        //UNCOMMENTED
+        /// <summary>
+        /// Manages player movement
+        /// </summary>
+        /// <param name="i_dir">Movement vector</param>
+        /// <param name="i_playerId">Player that is moved</param>
         public async Task PlayerMovesAsync(int[] i_dir, string i_playerId)
         {
-            int[] playerPos = null;
-            string killedPlayer = null;
+            int[] playerPos;
+            string killedPlayer;
             ActorEventSource.Current.Message("Getting gamemap");
             GameMap gameMap = await this.StateManager.GetStateAsync<GameMap>("gamemap");
             ActorEventSource.Current.Message("Gamemap gotten: {0}",gameMap);
-            int result = gameMap.MovePlayer(i_dir, i_playerId, ref playerPos, ref killedPlayer);
+            int result = gameMap.MovePlayer(i_dir, i_playerId, out playerPos, out killedPlayer);
             if (result > 0)
             {
                 var ev = GetEvent<IGameEvents>();
@@ -313,88 +497,78 @@ namespace GameManagerActor
             await this.StateManager.SetStateAsync("gamemap", gameMap);
 
         }
-        //!!!!!Player Id collision problem
-        public async Task<bool> PlayerRegisterAsync(string i_playerId)
-        {
-            /*
-            await this.StateManager.SetStateAsync("gamemap", new GameMap(this));
-            await this.StateManager.SetStateAsync("state", 0);
-            */
-            GameMap gameMap = await this.StateManager.GetStateAsync<GameMap>("gamemap");
-            int state = await this.StateManager.GetStateAsync<int>("state");
-            int playerCount = gameMap.playerCount;
-            bool result = gameMap.ConnectPlayer(i_playerId);
-            if (playerCount == 0  && result)
-                await this.RegisterReminderAsync("LobbyCheck", null, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
-            if (gameMap.isFull)
-                state = 1;
-            await this.StateManager.SetStateAsync("gamemap", gameMap);
-            await this.StateManager.SetStateAsync("state", state);
-            return result;
-        }
 
-        public async Task PlayerStillConnectedAsync(string i_playerId)
-        {
-            GameMap gameMap = await this.StateManager.GetStateAsync<GameMap>("gamemap");
-            gameMap.PlayerConnected(i_playerId);
-            await this.StateManager.SetStateAsync("gamemap", gameMap);
-        }
-
-        public async Task UpdateLobbyInfoAsync()
-        {
-            GameMap gameMap = await this.StateManager.GetStateAsync<GameMap>("gamemap");
-            var ev = GetEvent<IGameLobbyEvents>();
-            ev.GameLobbyInfoUpdate(gameMap.playerList);
-        }
-
-        public async Task StartGameAsync()
-        {
-            var ev = GetEvent<IGameLobbyEvents>();
-            ev.GameStart();
-        }
-
-        public async Task ReceiveReminderAsync(string reminderName, byte[] context, TimeSpan dueTime, TimeSpan period)
-        {
-            GameMap gameMap = await this.StateManager.GetStateAsync<GameMap>("gamemap");
-            int state = await this.StateManager.GetStateAsync<int>("state");
-            if (reminderName.Equals("LobbyCheck"))
-            {
-                List<string> removedPlayers;
-                gameMap.CheckLobbyAsync(out removedPlayers);
-                if (removedPlayers.Count > 0)
-                    foreach (string removingPlayer in removedPlayers)
-                        await PlayerDisconnectAsync(removingPlayer);
-            }
-            if (state == 1 && gameMap.isFull)
-            {
-                await this.UnregisterReminderAsync(GetReminder("LobbyCheck"));
-                gameMap.Initialize();
-                await this.StateManager.SetStateAsync("gamemap", gameMap);
-                await StartGameAsync();
-            }
-            else
-                await UpdateLobbyInfoAsync();
-        }
-
+        /// <summary>
+        /// Gets player position
+        /// </summary>
+        /// <param name="i_playerId">Player whose position is returned</param>
+        /// <returns>Position vector</returns>
         public async Task<int[]> GetPlayerPosAsync(string i_playerId)
         {
+            //Gets "gamemap" from StateManager
             GameMap gameMap = await this.StateManager.GetStateAsync<GameMap>("gamemap");
 
+
+            /*
             ActorEventSource.Current.Message("Getting position");
             ActorEventSource.Current.Message("Player {0}",i_playerId);
             ActorEventSource.Current.Message("Position {0},{1}", gameMap.GetPlayerPos(i_playerId)[0], gameMap.GetPlayerPos(i_playerId)[1]);
-            
+            */
+
+            //Returns player position
             int[] res = gameMap.GetPlayerPos(i_playerId);
             return res;
         }
 
+        /// <summary>
+        /// Manages player's radar, return info to player and notifies other players about it
+        /// </summary>
+        /// <param name="i_playerId">Player that used radar</param>
+        /// <returns>Map info for this player</returns>
         public async Task<CellContent[][]> RadarActivatedAsync(string i_playerId)
         {
+            //Gets "gamemap" from StateManager
             GameMap gameMap = await this.StateManager.GetStateAsync<GameMap>("gamemap");
+            //Gets IGameEvents and send RadarUsed to clients with player position vector
             var ev = GetEvent<IGameEvents>();
             ev.RadarUsed(gameMap.GetPlayerPos(i_playerId));
+            //Returns map info to player
             CellContent[][] res = gameMap.RadarActivated(i_playerId);
             return res;
+        }
+
+        public async Task ReceiveReminderAsync(string reminderName, byte[] context, TimeSpan dueTime, TimeSpan period)
+        {
+            //Gets "gamemap" from Statemanager
+            GameMap gameMap = await this.StateManager.GetStateAsync<GameMap>("gamemap");
+            //If LobbyCheck reminder
+            if (reminderName.Equals("LobbyCheck"))
+            {
+                //Get players that are not connected
+                List<string> removedPlayers = gameMap.CheckPlayers();
+                //If there are players
+                if (removedPlayers.Count > 0)
+                    //Disconnect each player
+                    foreach (string removingPlayer in removedPlayers)
+                        await PlayerDisconnectAsync(removingPlayer);
+            }
+            //If game is in Lobby state and lobby is full
+            if (gameMap.state.Equals(GameState.Lobby) && gameMap.isFull)
+            {
+                //Unregister LobbyCheck reminder
+                await this.UnregisterReminderAsync(GetReminder("LobbyCheck"));
+                //Prepare game
+                gameMap.PrepareGame();
+                //Saves "gamemap" state
+                await this.StateManager.SetStateAsync("gamemap", gameMap);
+                //Gets IGameLobbyEvents and send GameStart event to clients
+                var ev = GetEvent<IGameLobbyEvents>();
+                ev.GameStart();
+            }
+            //otherwise
+            else
+                //Update lobby info
+                await UpdateLobbyInfoAsync();
         }
     }
 }

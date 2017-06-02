@@ -78,7 +78,9 @@ namespace GameManagerActor.Interfaces
     /// </summary>
     public interface IGameManagerActor : IActor, IActorEventPublisher<IGameLobbyEvents>, IActorEventPublisher<IGameEvents>
     {
-        Task<bool> PlayerRegisterAsync(string i_playerId);
+        Task InitializeGameAsync();
+
+        Task<int> ConnectPlayerAsync(string i_playerId);
 
         Task PlayerMovesAsync(int[] i_dir, string i_playerId);
 
@@ -88,7 +90,7 @@ namespace GameManagerActor.Interfaces
 
         Task UpdateLobbyInfoAsync();
 
-        Task StartGameAsync();
+        //Task StartGameAsync();
 
         Task PlayerStillConnectedAsync(string i_playerId);
 
