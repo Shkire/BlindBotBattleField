@@ -127,3 +127,21 @@ namespace GameManagerActor.Interfaces.BasicClasses
         }
     }
 }
+
+namespace ServerResponse
+{
+    public class ServerResponseInfo<T>
+    {
+        public T info;
+    }
+
+    public class ServerResponseInfo<T, E>: ServerResponseInfo<T>
+    {
+        public E exception;
+    }
+
+    public class ServerResponseInfo<T,E,TT>: ServerResponseInfo<T,E>
+    {
+        public TT additionalInfo;
+    }
+}

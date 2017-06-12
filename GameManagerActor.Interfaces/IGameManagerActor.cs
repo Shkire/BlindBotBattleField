@@ -2,6 +2,8 @@
 using Microsoft.ServiceFabric.Actors;
 using GameManagerActor.Interfaces.EventHandlers;
 using GameManagerActor.Interfaces.BasicClasses;
+using ServerResponse;
+using System;
 
 namespace GameManagerActor.Interfaces
 {
@@ -21,7 +23,7 @@ namespace GameManagerActor.Interfaces
         /// </summary>
         /// <param name="i_player">Player name</param>
         /// <returns>0 if player could be connected, 1 if game is full or started and 2 if game was removed</returns>
-        Task<int> ConnectPlayerAsync(string i_player);
+        Task<ServerResponseInfo<int,Exception>> ConnectPlayerAsync(string i_player);
 
         /// <summary>
         /// Moves player
@@ -60,13 +62,13 @@ namespace GameManagerActor.Interfaces
         /// </summary>
         /// <param name="i_player">Player name</param>
         /// <returns>Player position vector</returns>
-        Task<int[]> GetPlayerPosAsync(string i_player);
+        Task<ServerResponseInfo<int[]>> GetPlayerPosAsync(string i_player);
 
         /// <summary>
         /// Manages player's radar, returns info to player and notifies other players about it
         /// </summary>
         /// <param name="i_player">Player that used radar</param>
         /// <returns>Map info for this player</returns>
-        Task<CellContent[][]> RadarActivatedAsync(string i_player);
+        Task<ServerResponseInfo<CellContent[][]>> RadarActivatedAsync(string i_player);
     }
 }

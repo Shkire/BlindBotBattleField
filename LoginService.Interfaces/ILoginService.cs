@@ -2,6 +2,9 @@
 using Microsoft.ServiceFabric.Services.Remoting;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using ServerResponse;
+using System.Data.SqlClient;
+using System;
 
 namespace LoginService.Interfaces
 {
@@ -16,7 +19,7 @@ namespace LoginService.Interfaces
         /// <param name="i_player">Player name</param>
         /// <param name="i_pass">Player password</param>
         /// <returns>True if player was able to be logged in, false otherwise</returns>
-        Task<bool> Login(string i_player, string i_pass);
+        Task<ServerResponseInfo<bool,SqlException>> Login(string i_player, string i_pass);
 
         /// <summary>
         /// Creates a new player on the server
@@ -24,14 +27,14 @@ namespace LoginService.Interfaces
         /// <param name="i_player">Player name</param>
         /// <param name="i_pass">Player password</param>
         /// <returns>True if player was able to be created, false otherwise</returns>
-        Task<bool> CreatePlayer(string i_player, string i_pass);
+        Task<ServerResponseInfo<bool,SqlException>> CreatePlayer(string i_player, string i_pass);
 
         /// <summary>
         /// Creates a new game session on the server
         /// </summary>
         /// <param name="i_gameDef">Game session definition</param>
         /// <returns>True if game session was able to be created, false otherwise</returns>
-        Task<bool> CreateGameAsync(GameDefinition i_gameDef);
+        Task<ServerResponseInfo<bool,Exception>> CreateGameAsync(GameDefinition i_gameDef);
 
         /// <summary>
         /// Increases in 1 the player counter of the game session (SQL register)
@@ -54,7 +57,6 @@ namespace LoginService.Interfaces
         /// <summary>
         /// Returns a list with all game session definitions on the server
         /// </summary>
-        Task<List<GameDefinition>> GetGameList();
-
+        Task<ServerResponseInfo<List<GameDefinition>,SqlException>> GetGameList();
     }
 }

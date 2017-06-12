@@ -94,6 +94,12 @@
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\GameManagerActor.Interfaces\GameManagerActor.Interfaces.csproj">
+      <Project>{9708EA16-C937-4E21-93FF-347B43D8AB6E}</Project>
+      <Name>GameManagerActor.Interfaces</Name>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
