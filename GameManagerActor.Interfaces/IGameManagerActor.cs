@@ -1,101 +1,72 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Microsoft.ServiceFabric.Actors;
-using static GameManagerActor.Interfaces.MapInfo;
+using GameManagerActor.Interfaces.EventHandlers;
+using GameManagerActor.Interfaces.BasicClasses;
 
 namespace GameManagerActor.Interfaces
 {
-    [Serializable]
-    public class MapInfo
-    {
-        public enum CellContent
-        {
-            None,
-            Floor,
-            Hole,
-            Player,
-            Dead,
-            Hit
-        }
-
-        private CellContent p_content;
-
-        private string p_playerId;
-
-        public CellContent content
-        {
-            get
-            {
-                return p_content;
-            }
-        }
-
-        public string playerId
-        {
-            get
-            {
-                return p_playerId;
-            }
-        }
-
-        public MapInfo(string i_playerId)
-        {
-            p_content = CellContent.Player;
-            p_playerId = i_playerId;
-        }
-
-        public MapInfo()
-        {
-            p_content = CellContent.Hole;
-        }
-    }
-
-    public interface IGameLobbyEvents : IActorEvents
-    {
-        //!!!!!Define Event params
-        void GameLobbyInfoUpdate(List<string> o_playerIdMap);
-
-        void GameStart();
-    }
-
-    public interface IGameEvents : IActorEvents
-    { 
-        void PlayerKilled(string o_playerKilledId, string o_playerKillerId, int[] o_playerPos);
-
-        void PlayerDead(string o_playerId, int o_reason, int[] o_playerPos);
-
-        void BombHits(List<int[]> o_hitList);
-
-        void RadarUsed(int[] o_playerPos);
-    }
-
     /// <summary>
-    /// GameManager Actor Interface.
-    /// Contains all actor methods and other actors or client can call it using this Interface.
+    /// GameManagerActor service method declaration. Allows comunication with actor service from client or other services
     /// </summary>
     public interface IGameManagerActor : IActor, IActorEventPublisher<IGameLobbyEvents>, IActorEventPublisher<IGameEvents>
     {
+        /// <summary>
+        /// Initializes the GameMap object
+        /// </summary>
+        /// <returns></returns>
         Task InitializeGameAsync();
 
-        Task<int> ConnectPlayerAsync(string i_playerId);
+        /// <summary>
+        /// Tries to connect player to game session
+        /// </summary>
+        /// <param name="i_player">Player name</param>
+        /// <returns>0 if player could be connected, 1 if game is full or started and 2 if game was removed</returns>
+        Task<int> ConnectPlayerAsync(string i_player);
 
-        Task PlayerMovesAsync(int[] i_dir, string i_playerId);
+        /// <summary>
+        /// Moves player
+        /// </summary>
+        /// <param name="i_dir">Movement vector</param>
+        /// <param name="i_player">Player name</param>
+        Task PlayerMovesAsync(int[] i_dir, string i_player);
 
-        Task PlayerAttacksAsync(string i_playerId);
+        /// <summary>
+        /// Manages player attack
+        /// </summary>
+        /// <param name="i_player">Player name</param>
+        /// <returns></returns>
+        Task PlayerAttacksAsync(string i_player);
 
-        Task PlayerDisconnectAsync(string i_playerId);
+        /// <summary>
+        /// Disconnects player from game session
+        /// </summary>
+        /// <param name="i_player">Player name</param>
+        /// <returns></returns>
+        Task PlayerDisconnectAsync(string i_player);
 
+        /// <summary>
+        /// Send ActorEvent with lobby info to clients
+        /// </summary>
         Task UpdateLobbyInfoAsync();
 
-        //Task StartGameAsync();
+        /// <summary>
+        /// Recieves notification from player's client that player stills connected
+        /// </summary>
+        /// <param name="i_player">Player name</param>
+        Task PlayerStillConnectedAsync(string i_player);
 
-        Task PlayerStillConnectedAsync(string i_playerId);
+        /// <summary>
+        /// Gets player position
+        /// </summary>
+        /// <param name="i_player">Player name</param>
+        /// <returns>Player position vector</returns>
+        Task<int[]> GetPlayerPosAsync(string i_player);
 
-        Task<int[]> GetPlayerPosAsync(string i_playerId);
-
-        Task<CellContent[][]> RadarActivatedAsync(string i_playerId);
+        /// <summary>
+        /// Manages player's radar, returns info to player and notifies other players about it
+        /// </summary>
+        /// <param name="i_player">Player that used radar</param>
+        /// <returns>Map info for this player</returns>
+        Task<CellContent[][]> RadarActivatedAsync(string i_player);
     }
 }
