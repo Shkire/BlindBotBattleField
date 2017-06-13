@@ -52,11 +52,11 @@ namespace LoginService.Interfaces
         /// Deletes a game session on the server (SQL register)
         /// </summary>
         /// <param name="i_gameId">Game session ID</param>
-        Task DeleteGame(string i_gameId);
+        Task DeleteGameAsync(string i_gameId);
 
         /// <summary>
         /// Returns a list with all game session definitions on the server
         /// </summary>
-        Task<ServerResponseInfo<List<GameDefinition>,SqlException>> GetGameList();
+        Task<ServerResponseInfo<bool,SqlException,List<GameDefinition>>> GetGameList();
     }
 }

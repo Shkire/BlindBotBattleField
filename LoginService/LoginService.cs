@@ -1,18 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Fabric;
-using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using System.Data.SqlClient;
 using Microsoft.ServiceFabric.Services.Communication.Runtime;
 using Microsoft.ServiceFabric.Services.Runtime;
-using System.Text;
 using LoginService.Interfaces;
 using Microsoft.ServiceFabric.Services.Remoting.Runtime;
 using GameManagerActor.Interfaces;
 using Microsoft.ServiceFabric.Actors.Client;
 using Microsoft.ServiceFabric.Actors;
+using LoginService.Interfaces.BasicClasses;
+using ServerResponse;
 
 namespace LoginService
 {
@@ -43,104 +42,292 @@ namespace LoginService
             this.CreateServiceRemotingListener(context)) };
         }
 
-
-        public  Task<bool> Login(string i_player, string i_pass)
+        /// <summary>
+        /// Tries to log in player to the server
+        /// </summary>
+        /// <param name="i_player">Player name</param>
+        /// <param name="i_pass">Player password</param>
+        /// <returns>True if player was able to be logged in, false otherwise</returns>
+        public Task<ServerResponseInfo<bool,SqlException>> Login(string i_player, string i_pass)
         {
+            ServerResponseInfo<bool,SqlException> res = new ServerResponseInfo<bool, SqlException>();
             try
             {
+                //Connects to the SQL Server and close when exiting
                 using (SqlConnection connection = new SqlConnection(builder.ConnectionString))
                 {
+                    //Opens SQL connection
                     connection.Open();
-                    string query = "SELECT Pass FROM Players WHERE Pass = '"+i_player+"'";
-
+                    //Creates query string
+                    string query = "SELECT Pass FROM Players WHERE Pass = '" + i_player + "'";
+                    //Creates SQL Command using query and connection
                     using (SqlCommand command = new SqlCommand(query, connection))
                     {
+                        //Creates SQL reader and executes query
                         using (SqlDataReader reader = command.ExecuteReader())
                         {
+                            //If data to read
                             if (reader.Read())
                             {
-                                return reader.GetString(0).Equals(i_pass) ? Task.FromResult(true) : Task.FromResult(false);
+                                //Returns if pass equals to pass read from SQL
+                                res.info = reader.GetString(0).Equals(i_pass) ? true : false;
+                                return Task.FromResult(res);
                             }
                             else
-                                return Task.FromResult(false);
+                                //If no data (no player with name "i_player" in SQL Server) returns false
+                                res.info = false;
+                                return Task.FromResult(res);
                         }
                     }
                 }
             }
+            //If SQL exception caught
             catch (SqlException e)
             {
-                return Task.FromResult(false);
+                //Returns false
+                res.info = false;
+                res.exception = e;
+                return Task.FromResult(res);
             }
         }
 
-        public Task<bool> CreatePlayer(string i_player, string i_pass)
+        /// <summary>
+        /// Creates a new player on the server
+        /// </summary>
+        /// <param name="i_player">Player name</param>
+        /// <param name="i_pass">Player password</param>
+        /// <returns>True if player was able to be created, false otherwise</returns>
+        public Task<ServerResponseInfo<bool,SqlException>> CreatePlayer(string i_player, string i_pass)
         {
+            ServerResponseInfo<bool, SqlException> res = new ServerResponseInfo<bool, SqlException>();
             try
             {
+                //Connects to the SQL Server and close when exiting
                 using (SqlConnection connection = new SqlConnection(builder.ConnectionString))
                 {
+                    //Opens SQL connection
                     connection.Open();
+                    //Creates query string
                     string query = "INSERT INTO Players VALUES('" + i_player + "','"+i_pass+"',0)";
-
+                    //Creates SQL Command using query and connection
                     using (SqlCommand command = new SqlCommand(query, connection))
                     {
+                        //Executes command
                         command.ExecuteNonQuery();
-                        return Task.FromResult(true);
+                        //Returns true
+                        res.info = true;
+                        return Task.FromResult(res);
+                    }
+                }
+            }
+            //If SQL Exception caught
+            catch (SqlException e)
+            {
+                //Returns false and exception
+                res.info = false;
+                res.exception = e;
+                return Task.FromResult(res);
+            }
+        }
+
+        /// <summary>
+        /// Creates a new game session on the server
+        /// </summary>
+        /// <param name="i_gameDef">Game session definition</param>
+        /// <returns>True if game session was able to be created, false otherwise</returns>
+        public async Task<ServerResponseInfo<bool,Exception>> CreateGameAsync(GameDefinition i_gameDef)
+        {
+            ServerResponseInfo<bool,Exception> res = new ServerResponseInfo<bool, Exception>();
+            try
+            {
+                //Connects to the SQL Server and close when exiting
+                using (SqlConnection connection = new SqlConnection(builder.ConnectionString))
+                {
+                    //Opens SQL connection
+                    connection.Open();
+                    //Creates query string
+                    string query = "INSERT INTO Games VALUES('" + i_gameDef.id + "'," + i_gameDef.maxPlayers + ","+0+","+i_gameDef.map+")";
+                    //Creates SQL Command using query and connection
+                    using (SqlCommand command = new SqlCommand(query, connection))
+                    {
+                        //Executes command
+                        command.ExecuteNonQuery();
+                    }
+                }
+                //Creates game actor
+                IGameManagerActor actor = ActorProxy.Create<IGameManagerActor>(new ActorId(i_gameDef.id));
+                //Initializes game actor
+                await actor.InitializeGameAsync();
+                //Returns true
+                res.info = true;
+                return res;
+            }
+            //If exception caught
+            catch (Exception e)
+            {
+                //REMOVE GAME
+
+                //Returns false with exception
+                res.info = false;
+                res.exception = e;
+                return res;
+            }
+        }
+
+        //RETURN VALUE??
+        /// <summary>
+        /// Increases in 1 the player counter of the game session (SQL register)
+        /// </summary>
+        /// <param name="i_gameId">Game session ID</param>
+        public async Task AddPlayerAsync(string i_gameId)
+        {
+            try
+            {
+                //Connects to the SQL Server and close when exiting
+                using (SqlConnection connection = new SqlConnection(builder.ConnectionString))
+                {
+                    //Sets player count to 0
+                    int players = 0;
+                    //Opens SQL connection
+                    connection.Open();
+                    //Creates query string
+                    string query = "SELECT Players FROM Games WHERE Id = '" + i_gameId + "'";
+                    //Creates SQL Command using query and connection
+                    using (SqlCommand command = new SqlCommand(query, connection))
+                    {
+                        //Creates SQL reader and executes query
+                        using (SqlDataReader reader = command.ExecuteReader())
+                        {
+                            //If data to read
+                            if (reader.Read())
+                            {
+                                //Gets player count
+                                players = reader.GetInt32(0);
+                            }
+                        }
+                    }
+                    //Increases player count
+                    players++;
+                    //Creates query string
+                    query = "UPDATE Games SET Players = " + players + " WHERE Id = '" + i_gameId + "'";
+                    //Creates SQL Command using query and connection
+                    using (SqlCommand command = new SqlCommand(query, connection))
+                    {
+                        //Executes command
+                        command.ExecuteNonQuery();
                     }
                 }
             }
             catch (SqlException e)
             {
-                return Task.FromResult(false);
             }
         }
 
-        public async Task<bool> CreateGameAsync(GameInfo i_info)
+        //RETURN VALUE??
+        /// <summary>
+        /// Decreases in 1 the player counter of the game session (SQL register)
+        /// </summary>
+        /// <param name="i_gameId">Game session ID</param>
+        public async Task RemovePlayerAsync(string i_gameId)
         {
             try
             {
+                //Connects to the SQL Server and close when exiting
                 using (SqlConnection connection = new SqlConnection(builder.ConnectionString))
                 {
+                    //Sets player count to 0
+                    int players = 0;
+                    //Opens SQL connection
                     connection.Open();
-                    string query = "INSERT INTO Games VALUES('" + i_info.id + "'," + i_info.maxPlayers + ","+0+","+i_info.map+")";
-
+                    //Creates query string
+                    string query = "SELECT Players FROM Games WHERE Id = '" + i_gameId + "'";
+                    //Creates SQL Command using query and connection
                     using (SqlCommand command = new SqlCommand(query, connection))
                     {
+                        //Creates SQL reader and executes query
+                        using (SqlDataReader reader = command.ExecuteReader())
+                        {
+                            //If data to read
+                            if (reader.Read())
+                            {
+                                //Gets player count
+                                players = reader.GetInt32(0);
+                            }
+                        }
+                    }
+                    //Decreases player count
+                    players++;
+                    //Creates query string
+                    query = "UPDATE Games SET Players = " + players + " WHERE Id = '" + i_gameId + "'";
+                    //Creates SQL Command using query and connection
+                    using (SqlCommand command = new SqlCommand(query, connection))
+                    {
+                        //Executes command
                         command.ExecuteNonQuery();
                     }
                 }
-                IGameManagerActor actor = ActorProxy.Create<IGameManagerActor>(new ActorId(i_info.id));
-                await actor.InitializeGameAsync();
-                return true;
+            }
+            catch (SqlException e)
+            {
+            }
+        }
+
+        //RETURN VALUE??
+        /// <summary>
+        /// Deletes a game session on the server (SQL register)
+        /// </summary>
+        /// <param name="i_gameId">Game session ID</param>
+        public async Task DeleteGameAsync(string i_gameId)
+        {
+            try
+            {
+                //Connects to the SQL Server and close when exiting
+                using (SqlConnection connection = new SqlConnection(builder.ConnectionString))
+                {
+                    //Opens SQL connection
+                    connection.Open();
+                    //Creates query string
+                    string query = "DELETE FROM Games WHERE Id ='" + i_gameId + "'";
+                    //Creates SQL Command using query and connection
+                    using (SqlCommand command = new SqlCommand(query, connection))
+                    {
+                        //Executes command
+                        command.ExecuteNonQuery();
+                    }
+                };
             }
             catch (Exception e)
             {
-                return false;
             }
         }
 
-        public Task DeleteGame(string i_id)
+        /// <summary>
+        /// Returns a list with all game session definitions on the server
+        /// </summary>
+        public Task<ServerResponseInfo<bool, SqlException, List<GameDefinition>>> GetGameList()
         {
-            throw new NotImplementedException();
-        }
-
-        public Task<List<GameInfo>> GetGameList()
-        {
-            List<GameInfo> gameList = new List<GameInfo>();
+            ServerResponseInfo<bool, SqlException, List<GameDefinition>> res = new ServerResponseInfo<bool, SqlException, List<GameDefinition>>();
+            List<GameDefinition> gameList = new List<GameDefinition>();
             try
             {
+                //Connects to the SQL Server and close when exiting
                 using (SqlConnection connection = new SqlConnection(builder.ConnectionString))
                 {
+                    //Opens SQL connection
                     connection.Open();
+                    //Creates query string
                     string query = "SELECT * FROM Games;";
-
+                    //Creates SQL Command using query and connection
                     using (SqlCommand command = new SqlCommand(query, connection))
                     {
+                        //Creates SQL reader and executes query
                         using (SqlDataReader reader = command.ExecuteReader())
                         {
+                            //While data to read
                             while (reader.Read())
                             {
-                                GameInfo gameInfo = new GameInfo();
+                                //Creates new GameDefinition adds data and adds it to gameList
+                                GameDefinition gameInfo = new GameDefinition();
                                 gameInfo.id = reader.GetString(0);
                                 gameInfo.maxPlayers = reader.GetInt32(1);
                                 gameInfo.players = reader.GetInt32(2);
@@ -150,81 +337,18 @@ namespace LoginService
                         }
                     }
                 }
+                //Returns true and gameList
+                res.info = true;
+                res.additionalInfo = gameList;
+                return Task.FromResult(res);
             }
+            //If exception caught
             catch (SqlException e)
             {
-
-            }
-
-            return Task.FromResult(gameList);
-        }
-
-        public async Task AddPlayerAsync(string i_gameId)
-        {
-            try
-            {
-                using (SqlConnection connection = new SqlConnection(builder.ConnectionString))
-                {
-                    int players = 0;
-                    connection.Open();
-                    string query = "SELECT Players FROM Games WHERE Id = '" + i_gameId + "'";
-
-                    using (SqlCommand command = new SqlCommand(query, connection))
-                    {
-                        using (SqlDataReader reader = command.ExecuteReader())
-                        {
-                            if (reader.Read())
-                            {
-                                players = reader.GetInt32(0);
-                            }
-                        }
-                    }
-                    players++;
-                    query = "UPDATE Games SET Players = "+players+" WHERE Id = '" + i_gameId + "'";
-
-                    using (SqlCommand command = new SqlCommand(query, connection))
-                    {
-                        command.ExecuteNonQuery();
-                    }
-                }
-            }
-            catch (SqlException e)
-            {
-            }
-        }
-
-        public async Task RemovePlayerAsync(string i_gameId)
-        {
-
-            try
-            {
-                using (SqlConnection connection = new SqlConnection(builder.ConnectionString))
-                {
-                    int players = 0;
-                    connection.Open();
-                    string query = "SELECT Players FROM Games WHERE Id = '" + i_gameId + "'";
-
-                    using (SqlCommand command = new SqlCommand(query, connection))
-                    {
-                        using (SqlDataReader reader = command.ExecuteReader())
-                        {
-                            if (reader.Read())
-                            {
-                                players = reader.GetInt32(0);
-                            }
-                        }
-                    }
-                    players--;
-                    query = "UPDATE Games SET Players = " + players + " WHERE Id = '" + i_gameId + "'";
-
-                    using (SqlCommand command = new SqlCommand(query, connection))
-                    {
-                        command.ExecuteNonQuery();
-                    }
-                }
-            }
-            catch (SqlException e)
-            {
+                //Returns false ande exception
+                res.info = false;
+                res.exception = e;
+                return Task.FromResult(res);
             }
         }
     }
