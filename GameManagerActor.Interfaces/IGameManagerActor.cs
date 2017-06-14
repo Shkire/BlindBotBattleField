@@ -13,38 +13,16 @@ namespace GameManagerActor.Interfaces
     public interface IGameManagerActor : IActor, IActorEventPublisher<IGameLobbyEvents>, IActorEventPublisher<IGameEvents>
     {
         /// <summary>
-        /// Initializes the GameMap object
+        /// Initializes the GameSession object
         /// </summary>
-        /// <returns></returns>
         Task InitializeGameAsync();
 
         /// <summary>
-        /// Tries to connect player to game session
+        /// Tries to connect player to GameSession
         /// </summary>
         /// <param name="i_player">Player name</param>
-        /// <returns>0 if player could be connected, 1 if game is full or started and 2 if game was removed</returns>
-        Task<ServerResponseInfo<int,Exception>> ConnectPlayerAsync(string i_player);
-
-        /// <summary>
-        /// Moves player
-        /// </summary>
-        /// <param name="i_dir">Movement vector</param>
-        /// <param name="i_player">Player name</param>
-        Task PlayerMovesAsync(int[] i_dir, string i_player);
-
-        /// <summary>
-        /// Manages player attack
-        /// </summary>
-        /// <param name="i_player">Player name</param>
-        /// <returns></returns>
-        Task PlayerAttacksAsync(string i_player);
-
-        /// <summary>
-        /// Disconnects player from game session
-        /// </summary>
-        /// <param name="i_player">Player name</param>
-        /// <returns></returns>
-        Task PlayerDisconnectAsync(string i_player);
+        /// <returns>True if player could be connected, false if game is full or started and false with exception if game was removed (or other reasons for exception throw)</returns>
+        Task<ServerResponseInfo<bool,Exception>> ConnectPlayerAsync(string i_player);
 
         /// <summary>
         /// Send ActorEvent with lobby info to clients
@@ -58,11 +36,31 @@ namespace GameManagerActor.Interfaces
         Task PlayerStillConnectedAsync(string i_player);
 
         /// <summary>
+        /// Disconnects player from GameSession
+        /// </summary>
+        /// <param name="i_player">Player name</param>
+        /// <returns></returns>
+        Task PlayerDisconnectAsync(string i_player);
+
+        /// <summary>
         /// Gets player position
         /// </summary>
         /// <param name="i_player">Player name</param>
         /// <returns>Player position vector</returns>
         Task<ServerResponseInfo<int[]>> GetPlayerPosAsync(string i_player);
+
+        /// <summary>
+        /// Moves player
+        /// </summary>
+        /// <param name="i_dir">Movement vector</param>
+        /// <param name="i_player">Player name</param>
+        Task PlayerMovesAsync(int[] i_dir, string i_player);
+
+        /// <summary>
+        /// Manages player attack
+        /// </summary>
+        /// <param name="i_player">Player name</param>
+        Task PlayerAttacksAsync(string i_player);
 
         /// <summary>
         /// Manages player's radar, returns info to player and notifies other players about it
