@@ -34,10 +34,12 @@ namespace GameManagerActor
         /// <summary>
         /// Initializes the GameSession object
         /// </summary>
-        public async Task InitializeGameAsync()
+        /// <param name="i_mapIndex">Maximum number of players</param>
+        /// <param name="i_maxPlayers">Chosen map index</param>
+        public async Task InitializeGameAsync(int i_maxPlayers, int i_mapIndex)
         {
             //Creates GameSession
-            GameSession gameSession = new GameSession();
+            GameSession gameSession = new GameSession(i_maxPlayers, i_mapIndex);
             //Saves GameSession as "gamesession" state
             await this.StateManager.SetStateAsync("gamesession", gameSession);
         }
@@ -162,68 +164,98 @@ namespace GameManagerActor
         /// </summary>
         /// <param name="i_dir">Movement vector</param>
         /// <param name="i_player">Player name</param>
-        public async Task PlayerMovesAsync(int[] i_dir, string i_player)
+        public async Task<ServerResponseInfo<bool,Exception>> PlayerMovesAsync(int[] i_dir, string i_player)
         {
-            //Out params
-            int[] playerPos;
-            string killedPlayer;
-            //Gets "gamesession" from StateManager
-            GameSession gameSession = await this.StateManager.GetStateAsync<GameSession>("gamesession");
-            //Moves player
-            MovementResult result = gameSession.MovePlayer(i_dir, i_player, out playerPos, out killedPlayer);
-            //If something happened
-            if (!result.Equals(MovementResult.Nothing))
+            ServerResponseInfo<bool, Exception> response = new ServerResponseInfo<bool, Exception>();
+            response.info = true;
+            try
             {
-                //Gets IGameEvents
-                var ev = GetEvent<IGameEvents>();
-                //If player died
-                if (result.Equals(MovementResult.PlayerDead))
-                    //Send PlayerDead event and notifies client that player died, where and reason
-                    ev.PlayerDead(i_player,playerPos,DeathReason.Hole);
-                //If player killed other player
-                else
-                    //Send PlayerKilled event and notifies client which player died, which killed it, death position vector and death reason 
-                    ev.PlayerKilled(killedPlayer, i_player, playerPos, DeathReason.PlayerSmash);
-                //If there's only one player alive
-                if (gameSession.AlivePlayers().Count == 1)
-                    //Send GameFinished event and notifies client that game has finished and which player won
-                    ev.GameFinished(gameSession.AlivePlayers()[0]);
+                //Gets "gamesession" from StateManager
+                GameSession gameSession = await this.StateManager.GetStateAsync<GameSession>("gamesession");
+                //Moves player
+                MovementResult result = gameSession.MovePlayer(i_dir, i_player);
+                //If player wasn't connected
+                if (result.type.Equals(MovementResultType.PlayerNotConnected))
+                {
+                    response.info = false;
+                }
+                //If something happened
+                else if (!result.type.Equals(MovementResultType.Nothing))
+                {
+                    //Gets IGameEvents
+                    var ev = GetEvent<IGameEvents>();
+                    //If player died
+                    if (result.type.Equals(MovementResultType.PlayerDied))
+                        //Send PlayerDead event and notifies client that player died, where and reason
+                        ev.PlayerDead(i_player, result.playerPos, DeathReason.Hole);
+                    //If player killed other player
+                    else
+                        //Send PlayerKilled event and notifies client which player died, which killed it, death position vector and death reason 
+                        ev.PlayerKilled(result.killedPlayer, i_player, result.playerPos, DeathReason.PlayerSmash);
+                    //If there's only one player alive
+                    if (gameSession.AlivePlayers().Count == 1)
+                        //Send GameFinished event and notifies client that game has finished and which player won
+                        ev.GameFinished(gameSession.AlivePlayers()[0]);
+                }
+                //Saves "gamesession" state
+                await this.StateManager.SetStateAsync("gamesession", gameSession);
             }
-            //Saves "gamesession" state
-            await this.StateManager.SetStateAsync("gamesession", gameSession);
+            catch(Exception e)
+            {
+                response.info = false;
+                response.exception = e;
+            }
+            return response;
         }
 
         /// <summary>
         /// Manages player attack
         /// </summary>
         /// <param name="i_player">Player name</param>
-        public async Task PlayerAttacksAsync(string i_player)
+        public async Task<ServerResponseInfo<bool,Exception>> PlayerAttacksAsync(string i_player)
         {
-            //Out params
-            List<int[]> i_hitList;
-            Dictionary<string, int[]> i_killedPlayersDict;
-            //Gets "gamesession" from StateManager
-            GameSession gameSession = await this.StateManager.GetStateAsync<GameSession>("gamesession");
-            //Manages layer attack
-            gameSession.PlayerAttacks(i_player,PLAYER_ATTACK_RATE,out i_hitList,out i_killedPlayersDict);
-            //Gets IGameEvents
-            var ev = GetEvent<IGameEvents>();
-            //Sends BombHits event to clients and notifies of hit area
-            ev.BombHits(i_hitList);
-            //If there are players killed by the attack
-            if (i_killedPlayersDict.Count > 0)
-                //For each player
-                foreach (string killedPlayerId in i_killedPlayersDict.Keys)
+            ServerResponseInfo<bool, Exception> response = new ServerResponseInfo<bool, Exception>();
+            response.info = true;
+            try
+            {
+                //Gets "gamesession" from StateManager
+                GameSession gameSession = await this.StateManager.GetStateAsync<GameSession>("gamesession");
+                //Manages player attack
+                AttackResult result = gameSession.PlayerAttacks(i_player, PLAYER_ATTACK_RATE);
+                //If player wasn't connected
+                if (!result.success)
                 {
-                    //Sends PlayerKilled event to clients and notifies which player was killed, player position vector and death reason
-                    ev.PlayerKilled(killedPlayerId, i_player, i_killedPlayersDict[killedPlayerId],DeathReason.PlayerHit);
+                    response.info = false;
                 }
-            //Saves "gamesession" state
-            await this.StateManager.SetStateAsync("gamesession", gameSession);
-            //If there's only one player alive
-            if (gameSession.AlivePlayers().Count == 1)
-                //Sends GameFinished event to clients
-                ev.GameFinished(gameSession.AlivePlayers()[0]);
+                //Otherwise
+                else
+                {
+                    //Gets IGameEvents
+                    var ev = GetEvent<IGameEvents>();
+                    //Sends BombHits event to clients and notifies of hit area
+                    ev.BombHits(result.hitPoints);
+                    //If there are players killed by the attack
+                    if (result.killedPlayersDict.Count > 0)
+                        //For each player
+                        foreach (string killedPlayerId in result.killedPlayersDict.Keys)
+                        {
+                            //Sends PlayerKilled event to clients and notifies which player was killed, player position vector and death reason
+                            ev.PlayerKilled(killedPlayerId, i_player, result.killedPlayersDict[killedPlayerId], DeathReason.PlayerHit);
+                        }
+                    //Saves "gamesession" state
+                    await this.StateManager.SetStateAsync("gamesession", gameSession);
+                    //If there's only one player alive
+                    if (gameSession.AlivePlayers().Count == 1)
+                        //Sends GameFinished event to clients
+                        ev.GameFinished(gameSession.AlivePlayers()[0]);
+                }
+            }
+            catch (Exception e)
+            {
+                response.info = false;
+                response.exception = e;
+            }
+            return response;
         }
 
         /// <summary>
@@ -231,17 +263,41 @@ namespace GameManagerActor
         /// </summary>
         /// <param name="i_player">Player that used radar</param>
         /// <returns>Map info for this player</returns>
-        public async Task<ServerResponseInfo<CellContent[][]>> RadarActivatedAsync(string i_player)
+        public async Task<ServerResponseInfo<bool,Exception,CellContent[][]>> RadarActivatedAsync(string i_player)
         {
-            ServerResponseInfo<CellContent[][]> res = new ServerResponseInfo<CellContent[][]>();
-            //Gets "gamesession" from StateManager
-            GameSession gameSession = await this.StateManager.GetStateAsync<GameSession>("gamesession");
-            //Gets IGameEvents and send RadarUsed to clients with player position vector
-            var ev = GetEvent<IGameEvents>();
-            ev.RadarUsed(gameSession.GetPlayerPos(i_player));
-            //Returns map info to player
-            res.info = gameSession.RadarActivated(i_player);
-            return res;
+            ServerResponseInfo<bool, Exception, CellContent[][]> response = new ServerResponseInfo<bool, Exception, CellContent[][]>();
+            response.info = true;
+            try
+            {
+                //Gets "gamesession" from StateManager
+                GameSession gameSession = await this.StateManager.GetStateAsync<GameSession>("gamesession");
+                //Gets radar result
+                RadarResult result = gameSession.RadarActivated(i_player);
+                //If player wasn't connected
+                if (!result.success)
+                {
+                    response.info = false;
+                }
+                //Otherwise
+                else
+                {
+                    //If player wasn't dead
+                    if (result.mapInfo != null)
+                    {
+                        //Gets IGameEvents and send RadarUsed to clients with player position vector
+                        var ev = GetEvent<IGameEvents>();
+                        ev.RadarUsed(gameSession.GetPlayerPos(i_player));
+                        //Adds map info to response
+                        response.additionalInfo = result.mapInfo;
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                response.info = false;
+                response.exception = e;
+            }
+            return response;
         }
 
         public async Task ReceiveReminderAsync(string reminderName, byte[] context, TimeSpan dueTime, TimeSpan period)

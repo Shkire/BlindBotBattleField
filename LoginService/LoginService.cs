@@ -157,7 +157,7 @@ namespace LoginService
                 //Creates game actor
                 IGameManagerActor actor = ActorProxy.Create<IGameManagerActor>(new ActorId(i_gameDef.id));
                 //Initializes game actor
-                await actor.InitializeGameAsync();
+                await actor.InitializeGameAsync(i_gameDef.maxPlayers, i_gameDef.map);
                 //Returns true
                 res.info = true;
                 return res;

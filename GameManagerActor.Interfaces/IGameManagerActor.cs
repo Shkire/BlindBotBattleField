@@ -15,7 +15,9 @@ namespace GameManagerActor.Interfaces
         /// <summary>
         /// Initializes the GameSession object
         /// </summary>
-        Task InitializeGameAsync();
+        /// <param name="i_mapIndex">Maximum number of players</param>
+        /// <param name="i_maxPlayers">Chosen map index</param>
+        Task InitializeGameAsync(int i_maxPlayers, int i_mapIndex);
 
         /// <summary>
         /// Tries to connect player to GameSession
@@ -54,19 +56,19 @@ namespace GameManagerActor.Interfaces
         /// </summary>
         /// <param name="i_dir">Movement vector</param>
         /// <param name="i_player">Player name</param>
-        Task PlayerMovesAsync(int[] i_dir, string i_player);
+        Task<ServerResponseInfo<bool,Exception>> PlayerMovesAsync(int[] i_dir, string i_player);
 
         /// <summary>
         /// Manages player attack
         /// </summary>
         /// <param name="i_player">Player name</param>
-        Task PlayerAttacksAsync(string i_player);
+        Task<ServerResponseInfo<bool,Exception>> PlayerAttacksAsync(string i_player);
 
         /// <summary>
         /// Manages player's radar, returns info to player and notifies other players about it
         /// </summary>
         /// <param name="i_player">Player that used radar</param>
         /// <returns>Map info for this player</returns>
-        Task<ServerResponseInfo<CellContent[][]>> RadarActivatedAsync(string i_player);
+        Task<ServerResponseInfo<bool,Exception, CellContent[][]>> RadarActivatedAsync(string i_player);
     }
 }
