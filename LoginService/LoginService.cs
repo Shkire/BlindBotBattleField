@@ -12,6 +12,7 @@ using Microsoft.ServiceFabric.Actors.Client;
 using Microsoft.ServiceFabric.Actors;
 using LoginService.Interfaces.BasicClasses;
 using ServerResponse;
+using System.Threading;
 
 namespace LoginService
 {
@@ -135,7 +136,7 @@ namespace LoginService
         /// </summary>
         /// <param name="i_gameDef">Game session definition</param>
         /// <returns>True if game session was able to be created, false otherwise</returns>
-        public async Task<ServerResponseInfo<bool,Exception>> CreateGameAsync(GameDefinition i_gameDef)
+        public async Task<ServerResponseInfo<bool,Exception>> CreateGameAsync(string i_gameId, int i_maxPlayers)
         {
             ServerResponseInfo<bool,Exception> res = new ServerResponseInfo<bool, Exception>();
             try
@@ -146,7 +147,7 @@ namespace LoginService
                     //Opens SQL connection
                     connection.Open();
                     //Creates query string
-                    string query = "INSERT INTO Games VALUES('" + i_gameDef.id + "'," + i_gameDef.maxPlayers + ","+0+","+i_gameDef.map+")";
+                    string query = "INSERT INTO Games VALUES('" + i_gameId + "'," + i_maxPlayers + ","+0+")";
                     //Creates SQL Command using query and connection
                     using (SqlCommand command = new SqlCommand(query, connection))
                     {
@@ -155,9 +156,9 @@ namespace LoginService
                     }
                 }
                 //Creates game actor
-                IGameManagerActor actor = ActorProxy.Create<IGameManagerActor>(new ActorId(i_gameDef.id));
+                IGameManagerActor actor = ActorProxy.Create<IGameManagerActor>(new ActorId(i_gameId));
                 //Initializes game actor
-                await actor.InitializeGameAsync(i_gameDef.maxPlayers, i_gameDef.map);
+                await actor.InitializeGameAsync(i_maxPlayers);
                 //Returns true
                 res.info = true;
                 return res;
@@ -256,7 +257,7 @@ namespace LoginService
                         }
                     }
                     //Decreases player count
-                    players++;
+                    players--;
                     //Creates query string
                     query = "UPDATE Games SET Players = " + players + " WHERE Id = '" + i_gameId + "'";
                     //Creates SQL Command using query and connection
@@ -277,10 +278,12 @@ namespace LoginService
         /// Deletes a game session on the server (SQL register)
         /// </summary>
         /// <param name="i_gameId">Game session ID</param>
-        public async Task DeleteGameAsync(string i_gameId)
+        public async Task DeleteGameAsync(string i_gameId, string i_uri)
         {
             try
             {
+                IActorService actor = ActorServiceProxy.Create(new Uri(i_uri),new ActorId(i_gameId));
+                await actor.DeleteActorAsync(new ActorId(i_gameId),CancellationToken.None);
                 //Connects to the SQL Server and close when exiting
                 using (SqlConnection connection = new SqlConnection(builder.ConnectionString))
                 {
@@ -331,7 +334,6 @@ namespace LoginService
                                 gameInfo.id = reader.GetString(0);
                                 gameInfo.maxPlayers = reader.GetInt32(1);
                                 gameInfo.players = reader.GetInt32(2);
-                                gameInfo.map = reader.GetInt32(3);
                                 gameList.Add(gameInfo);
                             }
                         }

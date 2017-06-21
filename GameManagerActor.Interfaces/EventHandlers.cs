@@ -12,13 +12,13 @@ namespace GameManagerActor.Interfaces.EventHandlers
         /// <summary>
         /// Event that sends a list with the players in the lobby to the client
         /// </summary>
-        /// <param name="o_playerList">Players in the lobby</param>
-        void GameLobbyInfoUpdate(List<string> o_playerList);
+        /// <param name="o_playersList">Players in the lobby</param>
+        void GameLobbyInfoUpdate(List<string> o_playersList);
 
         /// <summary>
         /// Event that notifies the client that game is starting
         /// </summary>
-        void GameStart();
+        void GameStart(Dictionary<string,int[]> o_playerPositions);
     }
 
     /// <summary>
@@ -26,6 +26,8 @@ namespace GameManagerActor.Interfaces.EventHandlers
     /// </summary>
     public interface IGameEvents : IActorEvents
     {
+        void TurretAiming(int[] o_aimPos);
+
         /// <summary>
         /// Notifies the client that a player was killed by other
         /// </summary>

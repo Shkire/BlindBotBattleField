@@ -1,6 +1,7 @@
 ﻿using GameManagerActor.Interfaces.BasicClasses;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace GameManagerActor.BasicClasses
 {
@@ -189,6 +190,14 @@ namespace GameManagerActor.BasicClasses
             }
         }
 
+        public Dictionary<string, int[]> getPlayerPositions
+        {
+            get
+            {
+                return p_playerPositions;
+            }
+        }
+
         #endregion
 
         /// <summary>
@@ -196,17 +205,169 @@ namespace GameManagerActor.BasicClasses
         /// </summary>
         /// <param name="i_maxPlayers">Maximum number of players</param>
         /// <param name="i_mapIndex">Chosen map index</param>
-        public GameSession(int i_maxPlayers, int i_mapIndex)
+        public GameSession(int i_maxPlayers)
         {
             p_maxPlayers = i_maxPlayers;
-            
-            //MAP CREATION
-
+            Random rnd = new Random(Guid.NewGuid().GetHashCode());
+            int map = rnd.Next(3);
+            int rotation = rnd.Next(4);
+            int mirror = rnd.Next(3);
+            switch (i_maxPlayers)
+            {
+                case 2:
+                    p_mapInfo = new CellInfo[8][];
+                    for (int i = 0; i < 8; i++)
+                    {
+                        p_mapInfo[i] = new CellInfo[8];
+                    }
+                    switch (map)
+                    {
+                        case 0:
+                            foreach (int[] pos in new int[][] { new int[] {2,1},
+                                                                new int[] {5,2},
+                                                                new int[] {4,4},
+                                                                new int[] {1,6},
+                                                                new int[] {7,7}})
+                            {
+                                p_mapInfo[pos[0]][pos[1]] = new CellInfo();
+                            }
+                            break;
+                        case 1:
+                            foreach (int[] pos in new int[][] { new int[] {2,0},
+                                                                new int[] {6,0},
+                                                                new int[] {4,1},
+                                                                new int[] {1,3},
+                                                                new int[] {4,4},
+                                                                new int[] {7,4},
+                                                                new int[] {2,6},
+                                                                new int[] {6,6},
+                                                                new int[] {0,7}})
+                            {
+                                p_mapInfo[pos[0]][pos[1]] = new CellInfo();
+                            }
+                            break;
+                        case 2:
+                            foreach (int[] pos in new int[][] { new int[] {3,0},
+                                                                new int[] {7,0},
+                                                                new int[] {0,1},
+                                                                new int[] {2,2},
+                                                                new int[] {5,2},
+                                                                new int[] {0,3},
+                                                                new int[] {7,3},
+                                                                new int[] {6,4},
+                                                                new int[] {2,5},
+                                                                new int[] {1,6},
+                                                                new int[] {5,6},
+                                                                new int[] {0,7},
+                                                                new int[] {1,7},
+                                                                new int[] {7,7}})
+                            {
+                                p_mapInfo[pos[0]][pos[1]] = new CellInfo();
+                            }
+                            break;
+                    }
+                    break;
+                case 3:
+                    p_mapInfo = new CellInfo[10][];
+                    for (int i = 0; i < 10; i++)
+                    {
+                        p_mapInfo[i] = new CellInfo[10];
+                    }
+                    switch (map)
+                    {
+                        case 0:
+                            foreach (int[] pos in new int[][] { new int[] {1,0},
+                                                                new int[] {8,1},
+                                                                new int[] {4,2},
+                                                                new int[] {1,5},
+                                                                new int[] {7,5},
+                                                                new int[] {5,6},
+                                                                new int[] {4,8},
+                                                                new int[] {8,9}})
+                            {
+                                p_mapInfo[pos[0]][pos[1]] = new CellInfo();
+                            }
+                            break;
+                        case 1:
+                            foreach (int[] pos in new int[][] { new int[] {0,0},
+                                                                new int[] {4,0},
+                                                                new int[] {7,1},
+                                                                new int[] {4,3},
+                                                                new int[] {2,4},
+                                                                new int[] {9,4},
+                                                                new int[] {6,5},
+                                                                new int[] {1,6},
+                                                                new int[] {5,7},
+                                                                new int[] {8,7},
+                                                                new int[] {0,9},
+                                                                new int[] {3,9},
+                                                                new int[] {6,9}})
+                            {
+                                p_mapInfo[pos[0]][pos[1]] = new CellInfo();
+                            }
+                            break;
+                        case 2:
+                            foreach (int[] pos in new int[][] { new int[] {0,0},
+                                                                new int[] {2,0},
+                                                                new int[] {6,0},
+                                                                new int[] {6,1},
+                                                                new int[] {2,2},
+                                                                new int[] {7,2},
+                                                                new int[] {0,3},
+                                                                new int[] {3,4},
+                                                                new int[] {6,4},
+                                                                new int[] {2,5},
+                                                                new int[] {7,5},
+                                                                new int[] {1,6},
+                                                                new int[] {5,6},
+                                                                new int[] {8,7},
+                                                                new int[] {9,7},
+                                                                new int[] {5,8},
+                                                                new int[] {0,9},
+                                                                new int[] {1,9},
+                                                                new int[] {4,9},
+                                                                new int[] {9,9}})
+                            {
+                                p_mapInfo[pos[0]][pos[1]] = new CellInfo();
+                            }
+                            break;
+                    }
+                    break;
+            }
+            for (int i = 0; i < rotation; i++)
+                RotateMap();
+            MirrorMap(mirror);
             p_playerList = new List<string>();
             p_connectedPlayers = new List<string>();
             p_playerPositions = new Dictionary<string, int[]>();
             p_deadPlayers = new List<string>();
             state = GameState.Lobby;
+        }
+
+        public void RotateMap()
+        {
+            int length = p_mapInfo[0].Length;
+            CellInfo[][] res = new CellInfo[length][];
+            for (int x = 0; x < length; x++)
+            {
+                res[x] = p_mapInfo.Select(p => p[x]).Reverse().ToArray();
+            }
+            p_mapInfo = res;
+        }
+
+        public void MirrorMap(int i_type)
+        {
+            if (i_type == 1)
+            {
+                p_mapInfo = p_mapInfo.Reverse().ToArray();
+            }
+            else if (i_type == 2)
+            {
+                for (int i = 0; i < p_mapInfo.Length; i++)
+                {
+                    p_mapInfo[i] = p_mapInfo[i].Reverse().ToArray();
+                }
+            }
         }
 
         /// <summary>
@@ -295,14 +456,23 @@ namespace GameManagerActor.BasicClasses
         /// </summary>
         public void PrepareGame()
         {
-            p_mapInfo = new CellInfo[3][];
-            for (int i = 0; i < 3; i++)
-                p_mapInfo[i] = new CellInfo[3];
-            p_mapInfo[0][0] = new CellInfo(p_playerList[0]);
-            p_playerPositions.Add(p_playerList[0], new int[] { 0, 0 });
-            p_mapInfo[2][2] = new CellInfo(p_playerList[1]);
-            p_playerPositions.Add(p_playerList[1], new int[] { 2, 2 });
-            p_mapInfo[1][1] = new CellInfo();
+            Random rnd = new Random(Guid.NewGuid().GetHashCode());
+            foreach (string player in p_playerList)
+            {
+                bool success = false;
+                do
+                {
+                    int xPos = rnd.Next(p_mapInfo.Length);
+                    int yPos = rnd.Next(p_mapInfo[0].Length);
+                    if (p_mapInfo[xPos][yPos] == null)
+                    {
+                        p_mapInfo[xPos][yPos] = new CellInfo(player);
+                        p_playerPositions.Add(player, new int[] { xPos, yPos });
+                        success = true;
+                    }
+                }
+                while (!success);
+            }
         }
 
         /// <summary>
@@ -432,6 +602,48 @@ namespace GameManagerActor.BasicClasses
         }
 
         /// <summary>
+        /// Manages player attack and notifies where attacked the player and which players killed
+        /// </summary>
+        /// <param name="i_player">Player that attacks</param>
+        /// <param name="i_attackRange">Range area of the attack</param>
+        public AttackResult TurretAttacks(int[] i_aimPos, int i_attackRange)
+        {
+            AttackResult res = new AttackResult();
+            res.hitPoints = new List<int[]>();
+            res.killedPlayersDict = new Dictionary<string, int[]>();
+            //Covers all attack positions
+            for (int i = -i_attackRange; i <= i_attackRange; i++)
+            {
+                for (int j = -(i_attackRange - Math.Abs(i)); j <= i_attackRange - Math.Abs(i); j++)
+                {
+                    //Sets hit position vector
+                    int[] hitPos = new int[] { i_aimPos[0] + i, i_aimPos[1] + j };
+                    //True if hit position if ot of map bounds
+                    bool outOfBounds = (hitPos[0] < 0 || hitPos[0] >= p_mapInfo.Length || hitPos[1] < 0 || hitPos[1] >= p_mapInfo[0].Length);
+                    //If hit position is not out of bounds and has a player that is not attacking player
+                    if (!outOfBounds && p_mapInfo[hitPos[0]][hitPos[1]] != null && p_mapInfo[hitPos[0]][hitPos[1]].content.Equals(CellContent.Player))
+                    {
+                        //Gets dead player name
+                        string deadPlayer = p_mapInfo[hitPos[0]][hitPos[1]].playerId;
+                        //Eliminates dead player from hit position
+                        p_mapInfo[hitPos[0]][hitPos[1]] = null;
+                        //Adds dead player to dead players list
+                        p_deadPlayers.Add(deadPlayer);
+                        //Adds dead player and hit position to killed players dictionary
+                        res.killedPlayersDict.Add(deadPlayer, hitPos);
+                    }
+                    //Otherwise
+                    else
+                    {
+                        //Adds hit position to hit points list
+                        res.hitPoints.Add(hitPos);
+                    }
+                }
+            }
+            return res;
+        }
+
+        /// <summary>
         /// Manages player's radar
         /// </summary>
         /// <param name="i_player">Player that used radar</param>
@@ -517,6 +729,20 @@ namespace GameManagerActor.BasicClasses
                 }
             }
             return res;
+        }
+
+        public int[] GetTurretAimPos(int i_attackRange)
+        {
+            Random rnd = new Random(Guid.NewGuid().GetHashCode());
+            int attackPosX = rnd.Next(0 - i_attackRange, p_mapInfo.Length + i_attackRange);
+            int attackPosY;
+            if (attackPosX < 0)
+                attackPosY = rnd.Next(0 - attackPosX - i_attackRange, p_mapInfo[0].Length + attackPosX + i_attackRange);
+            else if (attackPosX > p_mapInfo.Length)
+                attackPosY = rnd.Next(0 + attackPosX - p_mapInfo.Length - 1 - i_attackRange, p_mapInfo[0].Length - attackPosX + p_mapInfo.Length - 1 + i_attackRange);
+            else
+                attackPosY = rnd.Next(0 - i_attackRange, p_mapInfo[0].Length + i_attackRange);
+            return new int[] { attackPosX, attackPosY };
         }
     }
 }

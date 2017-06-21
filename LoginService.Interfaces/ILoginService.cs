@@ -34,7 +34,7 @@ namespace LoginService.Interfaces
         /// </summary>
         /// <param name="i_gameDef">Game session definition</param>
         /// <returns>True if game session was able to be created, false otherwise</returns>
-        Task<ServerResponseInfo<bool,Exception>> CreateGameAsync(GameDefinition i_gameDef);
+        Task<ServerResponseInfo<bool,Exception>> CreateGameAsync(string i_gameId, int i_maxPlayers);
 
         /// <summary>
         /// Increases in 1 the player counter of the game session (SQL register)
@@ -52,7 +52,7 @@ namespace LoginService.Interfaces
         /// Deletes a game session on the server (SQL register)
         /// </summary>
         /// <param name="i_gameId">Game session ID</param>
-        Task DeleteGameAsync(string i_gameId);
+        Task DeleteGameAsync(string i_gameId, string i_uri);
 
         /// <summary>
         /// Returns a list with all game session definitions on the server

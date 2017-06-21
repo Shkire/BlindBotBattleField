@@ -17,7 +17,7 @@ namespace GameManagerActor.Interfaces
         /// </summary>
         /// <param name="i_mapIndex">Maximum number of players</param>
         /// <param name="i_maxPlayers">Chosen map index</param>
-        Task InitializeGameAsync(int i_maxPlayers, int i_mapIndex);
+        Task InitializeGameAsync(int i_maxPlayers);
 
         /// <summary>
         /// Tries to connect player to GameSession

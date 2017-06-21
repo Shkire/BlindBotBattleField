@@ -36,12 +36,13 @@ namespace GameManagerActor
         /// </summary>
         /// <param name="i_mapIndex">Maximum number of players</param>
         /// <param name="i_maxPlayers">Chosen map index</param>
-        public async Task InitializeGameAsync(int i_maxPlayers, int i_mapIndex)
+        public async Task InitializeGameAsync(int i_maxPlayers)
         {
             //Creates GameSession
-            GameSession gameSession = new GameSession(i_maxPlayers, i_mapIndex);
+            GameSession gameSession = new GameSession(i_maxPlayers);
             //Saves GameSession as "gamesession" state
             await this.StateManager.SetStateAsync("gamesession", gameSession);
+            await this.RegisterReminderAsync("RemoveIfEmpty", null, TimeSpan.FromSeconds(60), TimeSpan.FromMilliseconds(-1));
         }
 
         /// <summary>
@@ -61,8 +62,11 @@ namespace GameManagerActor
                 {
                     //If first player in lobby
                     if (gameSession.playerCount == 1)
+                    {
+                        await this.UnregisterReminderAsync(GetReminder("RemoveIfEmpty"));
                         //Registers LobyCheck reminder
                         await this.RegisterReminderAsync("LobbyCheck", null, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
+                    }
                     //Saves "gamesession" state
                     await this.StateManager.SetStateAsync("gamesession", gameSession);
                     ILoginService login = ServiceProxy.Create<ILoginService>(new Uri(ServiceUri.AbsoluteUri.Replace("GameManagerActorService", "LoginService")));
@@ -98,10 +102,14 @@ namespace GameManagerActor
             //If game is in Lobby state
             if (gameSession.state.Equals(GameState.Lobby))
             {
+                ActorEventSource.Current.Message("Lanza evento");
+                foreach (string player in gameSession.playerList)
+                {
+                    ActorEventSource.Current.Message("Jugador: "+player);
+                }
                 //Gets IGameLobbyEvents and sends GameLobbyInfoUpdate event with list of players
                 var ev = GetEvent<IGameLobbyEvents>();
                 ev.GameLobbyInfoUpdate(gameSession.playerList);
-
             }
         }
 
@@ -142,6 +150,8 @@ namespace GameManagerActor
             await this.StateManager.SetStateAsync("gamesession", gameSession);
             ILoginService login = ServiceProxy.Create<ILoginService>(new Uri(ServiceUri.AbsoluteUri.Replace("GameManagerActorService","LoginService")));
             await login.RemovePlayerAsync(Id.ToString());
+            if (gameSession.playerCount == 0)
+                await this.RegisterReminderAsync("RemoveIfEmpty", null, TimeSpan.FromSeconds(60), TimeSpan.FromMilliseconds(-1));
         }
 
         /// <summary>
@@ -314,24 +324,74 @@ namespace GameManagerActor
                     //Disconnect each player
                     foreach (string removingPlayer in removedPlayers)
                         await PlayerDisconnectAsync(removingPlayer);
+                //If game is in Lobby state and lobby is full
+                if (gameSession.state.Equals(GameState.Lobby) && gameSession.isFull)
+                {
+                    //Unregister LobbyCheck reminder
+                    await this.UnregisterReminderAsync(GetReminder("LobbyCheck"));
+                    //Prepare game
+                    gameSession.PrepareGame();
+                    //Gets IGameLobbyEvents and send GameStart event to clients
+                    var ev = GetEvent<IGameLobbyEvents>();
+                    ev.GameStart(gameSession.getPlayerPositions);
+                    await this.RegisterReminderAsync("TurretAim", null , TimeSpan.FromSeconds(5), TimeSpan.FromMilliseconds(-1));
+                }
+                //otherwise
+                else
+                    //Update lobby info
+                    await UpdateLobbyInfoAsync();
             }
-            //If game is in Lobby state and lobby is full
-            if (gameSession.state.Equals(GameState.Lobby) && gameSession.isFull)
+            if (reminderName.Equals("RemoveIfEmpty"))
             {
-                //Unregister LobbyCheck reminder
-                await this.UnregisterReminderAsync(GetReminder("LobbyCheck"));
-                //Prepare game
-                gameSession.PrepareGame();
-                //Saves "gamesession" state
-                await this.StateManager.SetStateAsync("gameSession", gameSession);
-                //Gets IGameLobbyEvents and send GameStart event to clients
-                var ev = GetEvent<IGameLobbyEvents>();
-                ev.GameStart();
+                ILoginService login = ServiceProxy.Create<ILoginService>(new Uri(ServiceUri.AbsoluteUri.Replace("GameManagerActorService", "LoginService")));
+                await login.DeleteGameAsync(Id.ToString(),ServiceUri.AbsoluteUri);
             }
-            //otherwise
-            else
-                //Update lobby info
-                await UpdateLobbyInfoAsync();
+            if (reminderName.Equals("TurretAim"))
+            {
+                if (context == null)
+                {
+                    int[] aimPos = gameSession.GetTurretAimPos(PLAYER_ATTACK_RATE);
+                    var ev = GetEvent<IGameEvents>();
+                    ev.TurretAiming(aimPos);
+                    await this.RegisterReminderAsync("TurretAim", new byte[] { 1, (byte)aimPos[0], (byte)aimPos[1] }, TimeSpan.FromSeconds(1), TimeSpan.FromMilliseconds(-1));
+                }
+                else
+                {
+                    int counter = context[0];
+                    int[] aimPos = new int[] { context[1], context[2] };
+                    counter++;
+                    var ev = GetEvent<IGameEvents>();
+                    ev.TurretAiming(aimPos);
+                    if (counter < 5)
+                        await this.RegisterReminderAsync("TurretAim", new byte[] { (byte)counter, (byte)aimPos[0], (byte)aimPos[1] }, TimeSpan.FromSeconds(1), TimeSpan.FromMilliseconds(-1));
+                    else
+                        await this.RegisterReminderAsync("TurretShot", new byte[] {(byte)aimPos[0], (byte)aimPos[1] }, TimeSpan.FromSeconds(1), TimeSpan.FromMilliseconds(-1));
+                }
+            }
+            if (reminderName.Equals("TurretShot"))
+            {
+                int[] aimpos = new int[] { context[0], context[1] };
+                AttackResult result = gameSession.TurretAttacks(aimpos, PLAYER_ATTACK_RATE);
+                //Gets IGameEvents
+                var ev = GetEvent<IGameEvents>();
+                //Sends BombHits event to clients and notifies of hit area
+                ev.BombHits(result.hitPoints);
+                //If there are players killed by the attack
+                if (result.killedPlayersDict.Count > 0)
+                    //For each player
+                    foreach (string killedPlayerId in result.killedPlayersDict.Keys)
+                    {
+                        //Sends PlayerKilled event to clients and notifies which player was killed, player position vector and death reason
+                        ev.PlayerDead(killedPlayerId, result.killedPlayersDict[killedPlayerId], DeathReason.Turret);
+                    }
+                //If there's only one player alive
+                if (gameSession.AlivePlayers().Count == 1)
+                    //Sends GameFinished event to clients
+                    ev.GameFinished(gameSession.AlivePlayers()[0]);
+                await this.RegisterReminderAsync("TurretAim", null, TimeSpan.FromSeconds(5), TimeSpan.FromMilliseconds(-1));
+            }
+            //Saves "gamesession" state
+            await this.StateManager.SetStateAsync("gameSession", gameSession);
         }
     }
 }

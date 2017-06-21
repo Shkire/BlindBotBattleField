@@ -36,7 +36,8 @@ namespace GameManagerActor.Interfaces.BasicClasses
         /// <summary>
         /// Bomb hit
         /// </summary>
-        Hit
+        Hit,
+        Aiming
     }
 
     /// <summary>
