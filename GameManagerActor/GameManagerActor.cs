@@ -69,6 +69,7 @@ namespace GameManagerActor
                     }
                     //Saves "gamesession" state
                     await this.StateManager.SetStateAsync("gamesession", gameSession);
+                    ActorEventSource.Current.Message(ServiceUri.AbsoluteUri);
                     ILoginService login = ServiceProxy.Create<ILoginService>(new Uri(ServiceUri.AbsoluteUri.Replace("GameManagerActorService", "LoginService")));
                     //Adds player to server (SQL Register)
                     await login.AddPlayerAsync(Id.ToString());
@@ -150,8 +151,10 @@ namespace GameManagerActor
             await this.StateManager.SetStateAsync("gamesession", gameSession);
             ILoginService login = ServiceProxy.Create<ILoginService>(new Uri(ServiceUri.AbsoluteUri.Replace("GameManagerActorService","LoginService")));
             await login.RemovePlayerAsync(Id.ToString());
+            /*
             if (gameSession.playerCount == 0)
                 await this.RegisterReminderAsync("RemoveIfEmpty", null, TimeSpan.FromSeconds(60), TimeSpan.FromMilliseconds(-1));
+                */
         }
 
         /// <summary>

@@ -1,5 +1,6 @@
 ﻿using Client.BasicClasses;
 using System;
+using System.Threading.Tasks;
 
 namespace Client
 {
@@ -11,9 +12,14 @@ namespace Client
         static void Main(string[] args)
         {
             ClientGameManager gameManager = new ClientGameManager(APP_NAME, LOGIN_SERVICE);
+            Console.WriteLine("Server adress:");
+            gameManager.ipAdress = Console.ReadLine();
+            if (gameManager.ipAdress.Equals(string.Empty))
+                gameManager.ipAdress = "fabric:/";
             while (!gameManager.exit)
             {
                 gameManager.Print();
+                //Task.WaitAll(Task.Delay(500));
                 var key = Console.ReadKey();
                 gameManager.Manage(key);
                 /*

@@ -47,6 +47,8 @@ namespace Client.BasicClasses
     {
         #region VARIABLES
 
+        const int COOLDOWN_RADAR = 30;
+        const int COOLDOWN_ATTACK = 10;
         private ClientState p_state;
         private int[] p_playerPosReal;
         private int[] p_playerPosVirt;
@@ -67,6 +69,10 @@ namespace Client.BasicClasses
         private bool p_dead;
         private bool p_gameFinished;
         private List<string> p_storedStringData;
+        private int radarTime;
+        private int attackTime;
+        public string ipAdress;
+        public List<DateTime> p_consoleWriteLock;
 
         #endregion
 
@@ -116,6 +122,7 @@ namespace Client.BasicClasses
 
         public ClientGameManager(string i_appName, string i_loginService)
         {
+            p_consoleWriteLock = new List<DateTime>();
             p_state = ClientState.Start;
             p_exit = false;
             p_pointer = 0;
@@ -127,8 +134,6 @@ namespace Client.BasicClasses
         {
             Console.ForegroundColor = ConsoleColor.White;
             Console.CursorVisible = false;
-            string playerName;
-            string pass;
             switch (p_state)
             {
                 case ClientState.Start:
@@ -469,7 +474,7 @@ namespace Client.BasicClasses
                                         Exception exc = null;
                                         try
                                         {
-                                            p_service = ServiceProxy.Create<ILoginService>(new Uri(p_appName + p_loginService));
+                                            p_service = ServiceProxy.Create<ILoginService>(new Uri( p_appName + p_loginService));
                                             res = p_service.CreatePlayer(p_storedStringData[0], p_storedStringData[1]).Result;
                                         }
                                         catch (Exception e)
@@ -564,7 +569,7 @@ namespace Client.BasicClasses
                                         Exception exc = null;
                                         try
                                         {
-                                            p_service = ServiceProxy.Create<ILoginService>(new Uri(p_appName + p_loginService));
+                                            p_service = ServiceProxy.Create<ILoginService>(new Uri( p_appName + p_loginService));
                                             res = p_service.Login(p_storedStringData[0], p_storedStringData[1]).Result;
                                         }
                                         catch (Exception e)
@@ -624,7 +629,7 @@ namespace Client.BasicClasses
                                 Console.WriteLine("Connecting...\n");
                                 try
                                 {
-                                    p_actor = ActorProxy.Create<IGameManagerActor>(new ActorId(p_games[p_pointer].id), p_appName);
+                                    p_actor = ActorProxy.Create<IGameManagerActor>(new ActorId(p_games[p_pointer].id), new Uri ( p_appName + "/GameManagerActorService"));
                                     res = p_actor.ConnectPlayerAsync(p_playerName).Result;
                                 }
                                 catch (Exception e)
@@ -731,7 +736,7 @@ namespace Client.BasicClasses
                                         exc = null;
                                         try
                                         {
-                                            p_service = ServiceProxy.Create<ILoginService>(new Uri(p_appName + p_loginService));
+                                            p_service = ServiceProxy.Create<ILoginService>(new Uri( p_appName + p_loginService));
                                             res = p_service.CreateGameAsync(p_storedStringData[0], Int32.Parse(p_storedStringData[1])).Result;
                                         }
                                         catch (Exception e)
@@ -747,7 +752,7 @@ namespace Client.BasicClasses
                                             Console.WriteLine("Connecting...\n");
                                             try
                                             {
-                                                p_actor = ActorProxy.Create<IGameManagerActor>(new ActorId(p_storedStringData[0]), p_appName);
+                                                p_actor = ActorProxy.Create<IGameManagerActor>(new ActorId(p_storedStringData[0]), new Uri ( p_appName + "/GameManagerActorService"));
                                                 res = p_actor.ConnectPlayerAsync(p_playerName).Result;
                                             }
                                             catch (Exception e)
@@ -828,11 +833,11 @@ namespace Client.BasicClasses
                                 MovePlayer(new int[] { 1, 0 });
                             break;
                         case ConsoleKey.Enter:
-                            if (!p_dead)
+                            if (!p_dead && radarTime==0)
                                 RadarUsed();
                             break;
                         case ConsoleKey.Spacebar:
-                            if (!p_dead)
+                            if (!p_dead && attackTime==0)
                                 PlayerAttacks();
                             break;
                         case ConsoleKey.Escape:
@@ -926,6 +931,8 @@ namespace Client.BasicClasses
 
         public void StartGame(Dictionary<string,int[]> i_playerPositions)
         {
+            radarTime = 0;
+            attackTime = 0;
             p_state = ClientState.Game;
             p_logPointer = 0;
             p_gameLog = new List<string>();
@@ -1017,6 +1024,7 @@ namespace Client.BasicClasses
             try
             {
                 response = p_actor.PlayerAttacksAsync(p_playerName).Result;
+                AttackCooldown();
             }
             catch (Exception e)
             {
@@ -1042,6 +1050,7 @@ namespace Client.BasicClasses
             try
             {
                 response = p_actor.RadarActivatedAsync(p_playerName).Result;
+                RadarCooldown();
             }
             catch (Exception e)
             {
@@ -1174,6 +1183,11 @@ namespace Client.BasicClasses
 
         public void RefreshClient()
         {
+            DateTime time = DateTime.Now;
+            p_consoleWriteLock.Add(time);
+            while (!p_consoleWriteLock[0].Equals(time))
+            {
+            }
             Console.Clear();
             Console.WriteLine("Playing\n");
             if (p_dead)
@@ -1219,7 +1233,16 @@ namespace Client.BasicClasses
                 }
                 Console.WriteLine(res);
             }
-            Console.WriteLine("\nArrows: Move bot    Space: Drop bomb    Enter: Radar    Esc: Exit");
+            Console.Write("\nArrows: Move bot    ");
+            if (attackTime > 0)
+                Console.Write("Drop bomb: " + ((attackTime < 10) ? " " + attackTime : attackTime.ToString()) + "       ");
+            else
+                Console.Write("Space: Drop bomb    ");
+            if (radarTime > 0)
+                Console.Write("Radar: " + ((radarTime < 10) ? " " + radarTime : radarTime.ToString()) + "       ");
+            else
+                Console.Write("Space: Drop bomb    ");
+            Console.WriteLine("Esc: Exit");
             Console.WriteLine("\nGame Log:");
             Console.WriteLine("\n------------------------------------------------------------------\n");
             for (int i = 0; i <= 5; i++)
@@ -1228,6 +1251,7 @@ namespace Client.BasicClasses
                 Console.WriteLine(info);
             }
             Console.WriteLine("\n------------------------------------------------------------------");
+            p_consoleWriteLock.RemoveAt(0);
         }
 
         public async Task RemoveMapInfoAsync(DateTime i_time, int i_millis)
@@ -1242,6 +1266,28 @@ namespace Client.BasicClasses
                 }
             }
             RefreshClient();
+        }
+
+        public async Task RadarCooldown()
+        {
+            radarTime = COOLDOWN_RADAR;
+            while (radarTime > 0)
+            {
+                RefreshClient();
+                await Task.Delay(1000);
+                radarTime--;
+            }       
+        }
+
+        public async Task AttackCooldown()
+        {
+            attackTime = COOLDOWN_ATTACK;
+            while (attackTime > 0)
+            {
+                RefreshClient();
+                await Task.Delay(1000);
+                attackTime--;
+            }
         }
     }
 }
