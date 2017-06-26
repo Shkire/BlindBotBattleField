@@ -1,0 +1,36 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ApplicationManifest xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" ApplicationTypeName="BlindBotBattleFieldType" ApplicationTypeVersion="1.0.0" xmlns="http://schemas.microsoft.com/2011/01/fabric" ___CorrelationId___="6926d372-e236-47fc-8ec7-78a86504a769">
+  <Parameters>
+    <Parameter Name="LoginService_InstanceCount" DefaultValue="-1" />
+    <Parameter Name="GameManagerActorService_PartitionCount" DefaultValue="10" />
+    <Parameter Name="GameManagerActorService_MinReplicaSetSize" DefaultValue="3" />
+    <Parameter Name="GameManagerActorService_TargetReplicaSetSize" DefaultValue="3" />
+  </Parameters>
+  <!-- Importe el elemento ServiceManifest del ServicePackage. Los elementos ServiceManifestName y ServiceManifestVersion 
+       deben coincidir con los atributos Name y Version del elemento ServiceManifest definido en el 
+       archivo ServiceManifest.xml. -->
+  <ServiceManifestImport>
+    <ServiceManifestRef ServiceManifestName="LoginServicePkg" ServiceManifestVersion="1.0.0" />
+    <ConfigOverrides />
+  </ServiceManifestImport>
+  <ServiceManifestImport>
+    <ServiceManifestRef ServiceManifestName="GameManagerActorPkg" ServiceManifestVersion="1.0.0" />
+  </ServiceManifestImport>
+  <DefaultServices>
+    <Service Name="LoginService">
+      <StatelessService ServiceTypeName="LoginServiceType" InstanceCount="[LoginService_InstanceCount]">
+        <SingletonPartition />
+      </StatelessService>
+    </Service>
+    <Service Name="GameManagerActorService" GeneratedIdRef="2d4a411a-6390-4447-b2bd-0fe9771edf46|Persisted">
+      <StatefulService ServiceTypeName="GameManagerActorServiceType" TargetReplicaSetSize="[GameManagerActorService_TargetReplicaSetSize]" MinReplicaSetSize="[GameManagerActorService_MinReplicaSetSize]">
+        <UniformInt64Partition PartitionCount="[GameManagerActorService_PartitionCount]" LowKey="-9223372036854775808" HighKey="9223372036854775807" />
+      </StatefulService>
+    </Service>
+    <!-- La sección siguiente crea instancias de tipos de servicio cuando se crea una 
+         instancia de este tipo de aplicación. También puede crear una o varias instancias de tipo de servicio 
+         usando el módulo ServiceFabric de PowerShell.
+         
+         El atributo ServiceTypeName siguiente debe coincidir con el nombre definido en el archivo ServiceManifest.xml importado. -->
+  </DefaultServices>
+</ApplicationManifest>

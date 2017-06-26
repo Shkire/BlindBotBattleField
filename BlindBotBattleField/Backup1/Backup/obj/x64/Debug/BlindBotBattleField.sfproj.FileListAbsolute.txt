@@ -1,0 +1,1 @@
+C:\Users\danie\Documents\Visual Studio 2015\Projects\BlindBotBattleField\BlindBotBattleField\obj\x64\Debug\BlindBotBattleField.sfprojResolveAssemblyReference.cache
