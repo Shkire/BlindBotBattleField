@@ -13,6 +13,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LoginService", "LoginServic
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LoginService.Interfaces", "LoginService.Interfaces\LoginService.Interfaces.csproj", "{C4DD00EE-EF87-4B53-B0BA-DF7B5D6A2048}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebApi", "WebApi\WebApi.csproj", "{D8F181A4-D92A-42FA-B578-E62AFC69BA26}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -53,6 +55,12 @@ Global
 		{C4DD00EE-EF87-4B53-B0BA-DF7B5D6A2048}.Release|Any CPU.ActiveCfg = Release|x64
 		{C4DD00EE-EF87-4B53-B0BA-DF7B5D6A2048}.Release|x64.ActiveCfg = Release|x64
 		{C4DD00EE-EF87-4B53-B0BA-DF7B5D6A2048}.Release|x64.Build.0 = Release|x64
+		{D8F181A4-D92A-42FA-B578-E62AFC69BA26}.Debug|Any CPU.ActiveCfg = Debug|x64
+		{D8F181A4-D92A-42FA-B578-E62AFC69BA26}.Debug|x64.ActiveCfg = Debug|x64
+		{D8F181A4-D92A-42FA-B578-E62AFC69BA26}.Debug|x64.Build.0 = Debug|x64
+		{D8F181A4-D92A-42FA-B578-E62AFC69BA26}.Release|Any CPU.ActiveCfg = Release|x64
+		{D8F181A4-D92A-42FA-B578-E62AFC69BA26}.Release|x64.ActiveCfg = Release|x64
+		{D8F181A4-D92A-42FA-B578-E62AFC69BA26}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

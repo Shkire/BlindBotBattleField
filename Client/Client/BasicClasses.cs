@@ -1,16 +1,14 @@
 ﻿using Client.EventHandlers;
-using GameManagerActor.Interfaces;
 using GameManagerActor.Interfaces.BasicClasses;
 using GameManagerActor.Interfaces.EventHandlers;
-using LoginService.Interfaces;
 using LoginService.Interfaces.BasicClasses;
-using Microsoft.ServiceFabric.Actors;
 using Microsoft.ServiceFabric.Actors.Client;
-using Microsoft.ServiceFabric.Services.Remoting.Client;
 using ServerResponse;
 using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
+using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -54,13 +52,11 @@ namespace Client.BasicClasses
         private int[] p_playerPosVirt;
         private ClientCellInfo[,] p_playerSight;
         private int p_playerSightRange = 5;
-        private IGameManagerActor p_actor;
-        private ILoginService p_service;
         private string p_playerName;
         private bool p_exit;
         private int p_pointer;
-        private string p_appName;
-        private string p_loginService;
+        private HttpClient p_client;
+        private string p_gameId;
         private List<GameDefinition> p_games;
         private IGameLobbyEvents p_lobbyHandler;
         private IGameEvents p_gameHandler;
@@ -77,23 +73,7 @@ namespace Client.BasicClasses
         #endregion
 
         #region GETTERS_AND_SETTERS
-
-        public IGameManagerActor actor
-        {
-            set
-            {
-                p_actor = value;
-            }
-        }
-
-        public ILoginService service
-        {
-            set
-            {
-                p_service = value;
-            }
-        }
-
+        
         public ClientState state
         {
             get
@@ -120,14 +100,16 @@ namespace Client.BasicClasses
 
         #endregion
 
-        public ClientGameManager(string i_appName, string i_loginService)
+        public ClientGameManager(string i_apiUri)
         {
             p_consoleWriteLock = new List<DateTime>();
             p_state = ClientState.Start;
             p_exit = false;
             p_pointer = 0;
-            p_appName = i_appName;
-            p_loginService = i_loginService;
+            p_client = new HttpClient();
+            p_client.BaseAddress = new Uri(i_apiUri);
+            p_client.DefaultRequestHeaders.Accept.Clear();
+            p_client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
         }
 
         public void Print()
@@ -474,8 +456,7 @@ namespace Client.BasicClasses
                                         Exception exc = null;
                                         try
                                         {
-                                            p_service = ServiceProxy.Create<ILoginService>(new Uri( p_appName + p_loginService));
-                                            res = p_service.CreatePlayer(p_storedStringData[0], p_storedStringData[1]).Result;
+                                            res = CreatePlayer(p_storedStringData[0], p_storedStringData[1]);
                                         }
                                         catch (Exception e)
                                         {
@@ -569,8 +550,7 @@ namespace Client.BasicClasses
                                         Exception exc = null;
                                         try
                                         {
-                                            p_service = ServiceProxy.Create<ILoginService>(new Uri( p_appName + p_loginService));
-                                            res = p_service.Login(p_storedStringData[0], p_storedStringData[1]).Result;
+                                            res = Login(p_storedStringData[0], p_storedStringData[1]);
                                         }
                                         catch (Exception e)
                                         {
@@ -629,8 +609,7 @@ namespace Client.BasicClasses
                                 Console.WriteLine("Connecting...\n");
                                 try
                                 {
-                                    p_actor = ActorProxy.Create<IGameManagerActor>(new ActorId(p_games[p_pointer].id), new Uri ( p_appName + "/GameManagerActorService"));
-                                    res = p_actor.ConnectPlayerAsync(p_playerName).Result;
+                                    res = ConnectPlayerAsync(p_games[p_pointer].id,p_playerName);
                                 }
                                 catch (Exception e)
                                 {
@@ -638,8 +617,9 @@ namespace Client.BasicClasses
                                 }
                                 if (res.info)
                                 {
+                                    p_gameId = p_games[p_pointer].id;
                                     p_state = ClientState.Lobby;
-                                    SubscribeToLobbyEvents();
+                                    StartListeningLobbyEvents();
                                     UpdateLobby();
                                     p_games = null;
                                 }
@@ -736,8 +716,7 @@ namespace Client.BasicClasses
                                         exc = null;
                                         try
                                         {
-                                            p_service = ServiceProxy.Create<ILoginService>(new Uri( p_appName + p_loginService));
-                                            res = p_service.CreateGameAsync(p_storedStringData[0], Int32.Parse(p_storedStringData[1])).Result;
+                                            res = CreateGame(p_storedStringData[0], Int32.Parse(p_storedStringData[1]));
                                         }
                                         catch (Exception e)
                                         {
@@ -752,8 +731,7 @@ namespace Client.BasicClasses
                                             Console.WriteLine("Connecting...\n");
                                             try
                                             {
-                                                p_actor = ActorProxy.Create<IGameManagerActor>(new ActorId(p_storedStringData[0]), new Uri ( p_appName + "/GameManagerActorService"));
-                                                res = p_actor.ConnectPlayerAsync(p_playerName).Result;
+                                                res = ConnectPlayerAsync(p_storedStringData[0],p_playerName);
                                             }
                                             catch (Exception e)
                                             {
@@ -761,8 +739,9 @@ namespace Client.BasicClasses
                                             }
                                             if (res.info)
                                             {
+                                                p_gameId = p_storedStringData[0];
                                                 p_state = ClientState.Lobby;
-                                                SubscribeToLobbyEvents();
+                                                StartListeningLobbyEvents();
                                                 UpdateLobby();
                                                 p_games = null;
                                             }
@@ -807,7 +786,7 @@ namespace Client.BasicClasses
                     {
                         case ConsoleKey.Escape:
                             p_state = ClientState.GameSelection;
-                            UnsubscribeToLobbyEvents();
+                            StopListeningLobbyEvents();
                             break;
                     }
                     break;
@@ -842,7 +821,7 @@ namespace Client.BasicClasses
                             break;
                         case ConsoleKey.Escape:
                             p_state = ClientState.GameSelection;
-                            UnsubscribeToGameEvents();
+                            StopListeningGameEvents();
                             break;
                         case ConsoleKey.Q:
                             GameLogUp();
@@ -871,7 +850,12 @@ namespace Client.BasicClasses
             Exception exc = null;
             try
             {
-                response = p_service.GetGameList().Result;
+                string path = "login/games";
+                HttpResponseMessage httpResponse = p_client.GetAsync(path).Result;
+                if (httpResponse.IsSuccessStatusCode)
+                {
+                    response = httpResponse.Content.ReadAsAsync<ServerResponseInfo<bool, SqlException, List<GameDefinition>>>().Result;
+                }
             }
             catch (Exception e)
             {
@@ -894,39 +878,54 @@ namespace Client.BasicClasses
 
         public ServerResponseInfo<bool,Exception> CreateGame(string i_gameName, int i_maxPlayers)
         {
-            return p_service.CreateGameAsync(i_gameName, i_maxPlayers).Result;
+            ServerResponseInfo<bool, Exception> res = new ServerResponseInfo<bool, Exception>();
+            string path = "login/games/new";
+            List<object> info = new List<object>();
+            info.Add(i_gameName);
+            info.Add(i_maxPlayers);
+            HttpResponseMessage response = p_client.PostAsJsonAsync(path,info).Result;
+            if (response.IsSuccessStatusCode)
+            {
+                res = response.Content.ReadAsAsync<ServerResponseInfo<bool, Exception>>().Result;
+            }
+            return res;
         }
 
         public void PlayerStillConnected()
         {
-            p_actor.PlayerStillConnectedAsync(p_playerName);
+            string path = "gamemanager/still";
+            List<string> info = new List<string>();
+            info.Add(p_gameId);
+            info.Add(playerName);
+            Task.WaitAll(p_client.PostAsJsonAsync(path,info));
         }
 
-        public void SubscribeToLobbyEvents()
+        public void StartListeningLobbyEvents()
         {
             p_lobbyHandler = new LobbyEventsHandler(this);
-            p_actor.SubscribeAsync<IGameLobbyEvents>(p_lobbyHandler);
+            //p_actor.SubscribeAsync<IGameLobbyEvents>(p_lobbyHandler);
         }
 
-        public void SubscribeToGameEvents()
+        public void StartListeningGameEvents()
         {
             p_gameHandler = new GameEventsHandler(this);
-            p_actor.SubscribeAsync<IGameEvents>(p_gameHandler);
+            //p_actor.SubscribeAsync<IGameEvents>(p_gameHandler);
         }
 
-        public void UnsubscribeToLobbyEvents()
+        public void StopListeningLobbyEvents()
         {
-            p_actor.UnsubscribeAsync<IGameLobbyEvents>(p_lobbyHandler);
+            //p_actor.UnsubscribeAsync<IGameLobbyEvents>(p_lobbyHandler);
         }
 
-        public void UnsubscribeToGameEvents()
+        public void StopListeningGameEvents()
         {
-            p_actor.UnsubscribeAsync<IGameEvents>(p_gameHandler);
+            //p_actor.UnsubscribeAsync<IGameEvents>(p_gameHandler);
         }
 
         public void UpdateLobby()
         {
-            p_actor.UpdateLobbyInfoAsync();
+            string path = "gamemanager/lobby";
+            Task.WaitAll(p_client.PostAsJsonAsync(path, p_gameId));
         }
 
         public void StartGame(Dictionary<string,int[]> i_playerPositions)
@@ -944,8 +943,8 @@ namespace Client.BasicClasses
             for (int i = 0; i < p_playerSightRange; i++)
                 for (int j = 0; j < p_playerSightRange; j++)
                     p_playerSight[i, j] = new ClientCellInfo();
-            UnsubscribeToLobbyEvents();
-            SubscribeToGameEvents();
+            StopListeningLobbyEvents();
+            StartListeningGameEvents();
             RefreshClient();
         }
 
@@ -965,7 +964,14 @@ namespace Client.BasicClasses
             response.info = false;
             try
             {
-                response = p_actor.PlayerMovesAsync(i_dir, p_playerName).Result;
+                string path = "gamemanager/move";
+                List<object> info = new List<object>();
+                info.Add(p_gameId);
+                info.Add(i_dir);
+                info.Add(playerName);
+                HttpResponseMessage httpRes = p_client.PostAsJsonAsync(path, info).Result;
+                if (httpRes.IsSuccessStatusCode)
+                    response = httpRes.Content.ReadAsAsync<ServerResponseInfo<bool, Exception>>().Result;
             }
             catch (Exception e)
             {
@@ -1023,7 +1029,13 @@ namespace Client.BasicClasses
             response.info = false;
             try
             {
-                response = p_actor.PlayerAttacksAsync(p_playerName).Result;
+                string path = "gamemanager/attack";
+                List<string> info = new List<string>();
+                info.Add(p_gameId);
+                info.Add(playerName);
+                HttpResponseMessage httpRes = p_client.PostAsJsonAsync(path, info).Result;
+                if (httpRes.IsSuccessStatusCode)
+                    response = httpRes.Content.ReadAsAsync<ServerResponseInfo<bool, Exception>>().Result;
                 AttackCooldown();
             }
             catch (Exception e)
@@ -1049,7 +1061,13 @@ namespace Client.BasicClasses
             response.info = false;
             try
             {
-                response = p_actor.RadarActivatedAsync(p_playerName).Result;
+                string path = "gamemanager/radar";
+                List<string> info = new List<string>();
+                info.Add(p_gameId);
+                info.Add(playerName);
+                HttpResponseMessage httpRes = p_client.PostAsJsonAsync(path, info).Result;
+                if (httpRes.IsSuccessStatusCode)
+                    response = httpRes.Content.ReadAsAsync<ServerResponseInfo<bool, Exception, CellContent[][]>>().Result;
                 RadarCooldown();
             }
             catch (Exception e)
@@ -1288,6 +1306,51 @@ namespace Client.BasicClasses
                 await Task.Delay(1000);
                 attackTime--;
             }
+        }
+
+        public ServerResponseInfo<bool, SqlException> CreatePlayer(string i_player, string i_pass)
+        {
+            ServerResponseInfo<bool, SqlException> res = new ServerResponseInfo<bool, SqlException>();
+            string path = "login/new";
+            List<string> info = new List<string>();
+            info.Add(i_player);
+            info.Add(i_pass);
+            HttpResponseMessage response = p_client.PostAsJsonAsync(path,info).Result;
+            if (response.IsSuccessStatusCode)
+            {
+                res = response.Content.ReadAsAsync<ServerResponseInfo<bool, SqlException>>().Result;
+            }
+            return res;
+        }
+
+        public ServerResponseInfo<bool, SqlException> Login(string i_player, string i_pass)
+        {
+            ServerResponseInfo<bool, SqlException> res = new ServerResponseInfo<bool, SqlException>();
+            List<string> info = new List<string>();
+            info.Add(i_player);
+            info.Add(i_pass);
+            string path = "login";
+            HttpResponseMessage response = p_client.PostAsJsonAsync(path,info).Result;
+            if (response.IsSuccessStatusCode)
+            {
+                res = response.Content.ReadAsAsync<ServerResponseInfo<bool, SqlException>>().Result;
+            }
+            return res;
+        }
+
+        public ServerResponseInfo<bool, Exception> ConnectPlayerAsync(string i_actor, string i_player)
+        {
+            ServerResponseInfo<bool, Exception> res = new ServerResponseInfo<bool, Exception>();
+            string path = "gamemanager/connect";
+            List<string> info = new List<string>();
+            info.Add(i_actor);
+            info.Add(i_player);
+            HttpResponseMessage response = p_client.PostAsJsonAsync(path,info).Result;
+            if (response.IsSuccessStatusCode)
+            {
+                res = response.Content.ReadAsAsync<ServerResponseInfo<bool, Exception>>().Result;
+            }
+            return res;
         }
     }
 }

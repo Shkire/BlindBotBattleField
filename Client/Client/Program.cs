@@ -6,16 +6,11 @@ namespace Client
 {
     class Program
     {
-        const string APP_NAME = "fabric:/BlindBotBattleField";
-        const string LOGIN_SERVICE = "/LoginService";
+        const string API_URI = "http://localhost:8603/api/";
 
         static void Main(string[] args)
         {
-            ClientGameManager gameManager = new ClientGameManager(APP_NAME, LOGIN_SERVICE);
-            Console.WriteLine("Server adress:");
-            gameManager.ipAdress = Console.ReadLine();
-            if (gameManager.ipAdress.Equals(string.Empty))
-                gameManager.ipAdress = "fabric:/";
+            ClientGameManager gameManager = new ClientGameManager(API_URI);
             while (!gameManager.exit)
             {
                 gameManager.Print();
