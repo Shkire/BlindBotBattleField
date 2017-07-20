@@ -1,6 +1,5 @@
 ﻿using System.Threading.Tasks;
 using Microsoft.ServiceFabric.Actors;
-using GameManagerActor.Interfaces.EventHandlers;
 using System;
 using BasicClasses.Common;
 using BasicClasses.GameManager;
@@ -10,7 +9,7 @@ namespace GameManagerActor.Interfaces
     /// <summary>
     /// GameManagerActor service method declaration. Allows comunication with actor service from client or other services
     /// </summary>
-    public interface IGameManagerActor : IActor, IActorEventPublisher<IGameLobbyEvents>, IActorEventPublisher<IGameEvents>
+    public interface IGameManagerActor : IActor
     {
         /// <summary>
         /// Initializes the GameSession object
