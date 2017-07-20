@@ -2,8 +2,8 @@
 using Microsoft.ServiceFabric.Actors;
 using GameManagerActor.Interfaces.EventHandlers;
 using GameManagerActor.Interfaces.BasicClasses;
-using ServerResponse;
 using System;
+using BasicClasses.Common;
 
 namespace GameManagerActor.Interfaces
 {
@@ -24,7 +24,7 @@ namespace GameManagerActor.Interfaces
         /// </summary>
         /// <param name="i_player">Player name</param>
         /// <returns>True if player could be connected, false if game is full or started and false with exception if game was removed (or other reasons for exception throw)</returns>
-        Task<ServerResponseInfo<bool,Exception>> ConnectPlayerAsync(string i_player);
+        Task<ServerResponseInfo<bool,Exception>> ConnectPlayerAsync(string i_player, byte[] i_address);
 
         /// <summary>
         /// Send ActorEvent with lobby info to clients

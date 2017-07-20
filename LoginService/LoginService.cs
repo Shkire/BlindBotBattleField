@@ -11,8 +11,8 @@ using GameManagerActor.Interfaces;
 using Microsoft.ServiceFabric.Actors.Client;
 using Microsoft.ServiceFabric.Actors;
 using LoginService.Interfaces.BasicClasses;
-using ServerResponse;
 using System.Threading;
+using BasicClasses.Common;
 
 namespace LoginService
 {

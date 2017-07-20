@@ -24,3 +24,5 @@ C:\Users\danie\Documents\GitHub\BlindBotBattleField\LoginService.Interfaces\bin\
 C:\Users\danie\Documents\GitHub\BlindBotBattleField\LoginService.Interfaces\obj\x64\Debug\LoginService.Interfaces.csprojResolveAssemblyReference.cache
 C:\Users\danie\Documents\GitHub\BlindBotBattleField\LoginService.Interfaces\obj\x64\Debug\LoginService.Interfaces.dll
 C:\Users\danie\Documents\GitHub\BlindBotBattleField\LoginService.Interfaces\obj\x64\Debug\LoginService.Interfaces.pdb
+C:\Users\danie\Documents\GitHub\BlindBotBattleField\LoginService.Interfaces\bin\x64\Debug\BasicClasses.dll
+C:\Users\danie\Documents\GitHub\BlindBotBattleField\LoginService.Interfaces\bin\x64\Debug\BasicClasses.pdb

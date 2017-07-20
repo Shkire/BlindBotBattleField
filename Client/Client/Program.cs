@@ -6,10 +6,13 @@ namespace Client
 {
     class Program
     {
-        const string API_URI = "http://localhost:8603/api/";
+        //const string API_URI = "http://localhost:8603/api/";
+        //const string API_URI = "http://blindbotbattlefield.westeurope.cloudapp.azure.com:8603/api/";
 
         static void Main(string[] args)
         {
+            Console.WriteLine("Write server IP addres");
+            string API_URI = Console.ReadLine();
             ClientGameManager gameManager = new ClientGameManager(API_URI);
             while (!gameManager.exit)
             {

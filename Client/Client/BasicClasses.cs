@@ -1,12 +1,13 @@
-﻿using Client.EventHandlers;
+﻿using BasicClasses.Common;
+using Client.Sockets;
+using ExtensionMethods;
 using GameManagerActor.Interfaces.BasicClasses;
 using GameManagerActor.Interfaces.EventHandlers;
 using LoginService.Interfaces.BasicClasses;
-using Microsoft.ServiceFabric.Actors.Client;
-using ServerResponse;
 using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
+using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading;
@@ -41,7 +42,7 @@ namespace Client.BasicClasses
         }
     }
 
-    class ClientGameManager
+    public class ClientGameManager
     {
         #region VARIABLES
 
@@ -69,11 +70,13 @@ namespace Client.BasicClasses
         private int attackTime;
         public string ipAdress;
         public List<DateTime> p_consoleWriteLock;
+        private Thread p_lobbyThread;
+        private Thread p_gameSessionThread;
 
         #endregion
 
         #region GETTERS_AND_SETTERS
-        
+
         public ClientState state
         {
             get
@@ -145,11 +148,11 @@ namespace Client.BasicClasses
                         Console.ForegroundColor = ConsoleColor.White;
                     Console.WriteLine("\tExit");
                     break;
-                    #endregion
+                #endregion
                 case ClientState.Start_HowTo:
                     #region PRINT_STARTHOWTO
                     break;
-                    #endregion
+                #endregion
                 case ClientState.Login:
                     #region PRINT_LOGIN
                     Console.Clear();
@@ -177,7 +180,7 @@ namespace Client.BasicClasses
                         Console.ForegroundColor = ConsoleColor.White;
                     Console.WriteLine("\tBack");
                     break;
-                    #endregion
+                #endregion
                 case ClientState.Login_New:
                     #region PRINT_LOGIN_NEW
                     Console.Clear();
@@ -187,7 +190,7 @@ namespace Client.BasicClasses
                         Console.ForegroundColor = ConsoleColor.Red;
                         Console.Write("->");
                     }
-                    Console.WriteLine("\tPlayer name: "+p_storedStringData[0]);
+                    Console.WriteLine("\tPlayer name: " + p_storedStringData[0]);
                     if (p_pointer == 1)
                     {
                         Console.ForegroundColor = ConsoleColor.Red;
@@ -195,7 +198,7 @@ namespace Client.BasicClasses
                     }
                     else
                         Console.ForegroundColor = ConsoleColor.White;
-                    Console.WriteLine("\tPassword: "+p_storedStringData[1]);
+                    Console.WriteLine("\tPassword: " + p_storedStringData[1]);
                     if (p_pointer == 2)
                     {
                         Console.ForegroundColor = ConsoleColor.Red;
@@ -213,7 +216,7 @@ namespace Client.BasicClasses
                         Console.ForegroundColor = ConsoleColor.White;
                     Console.WriteLine("\tBack");
                     break;
-                    #endregion
+                #endregion
                 case ClientState.Login_Existing:
                     #region PRINT_LOGIN_EXISTING
                     Console.Clear();
@@ -249,7 +252,7 @@ namespace Client.BasicClasses
                         Console.ForegroundColor = ConsoleColor.White;
                     Console.WriteLine("\tBack");
                     break;
-                    #endregion
+                #endregion
                 case ClientState.GameSelection:
                     #region PRINT_GAMESELECTION
                     if (p_games == null)
@@ -311,16 +314,16 @@ namespace Client.BasicClasses
                 case ClientState.Lobby:
                     #region PRINT_LOBBY
                     break;
-                    #endregion
+                #endregion
                 case ClientState.Game:
                     #region PRINT_GAME
                     RefreshClient();
                     break;
-                    #endregion
+                #endregion
                 case ClientState.Spectator:
                     #region PRINT_SPECTATOR
                     break;
-                    #endregion
+                #endregion
                 case ClientState.Results:
                     #region PRINT_RESULTS
                     break;
@@ -364,7 +367,7 @@ namespace Client.BasicClasses
                 case ClientState.Start_HowTo:
                     #region MANAGE_START_HOWTO
                     break;
-                    #endregion
+                #endregion
                 case ClientState.Login:
                     #region MANAGE_LOGIN
                     switch (i_key.Key)
@@ -383,7 +386,7 @@ namespace Client.BasicClasses
                                 case 0:
                                     p_state = ClientState.Login_New;
                                     p_pointer = 0;
-                                    p_storedStringData = new List<string>(new string[] {string.Empty, string.Empty});
+                                    p_storedStringData = new List<string>(new string[] { string.Empty, string.Empty });
                                     break;
                                 case 1:
                                     p_state = ClientState.Login_Existing;
@@ -586,7 +589,7 @@ namespace Client.BasicClasses
                             break;
                     }
                     break;
-                    #endregion
+                #endregion
                 case ClientState.GameSelection:
                     #region MANAGE_GAMESELECTION
                     switch (i_key.Key)
@@ -609,7 +612,7 @@ namespace Client.BasicClasses
                                 Console.WriteLine("Connecting...\n");
                                 try
                                 {
-                                    res = ConnectPlayerAsync(p_games[p_pointer].id,p_playerName);
+                                    res = ConnectPlayerAsync(p_games[p_pointer].id, p_playerName);
                                 }
                                 catch (Exception e)
                                 {
@@ -648,7 +651,7 @@ namespace Client.BasicClasses
                             break;
                     }
                     break;
-                    #endregion
+                #endregion
                 case ClientState.GameSelection_Create:
                     #region MANAGE_GAMESELECTION_CREATE
                     switch (i_key.Key)
@@ -706,7 +709,7 @@ namespace Client.BasicClasses
                                     {
                                         exc = e;
                                     }
-                                    if (exc==null && !p_storedStringData[0].Equals(string.Empty) && max>=2 && max<=8)
+                                    if (exc == null && !p_storedStringData[0].Equals(string.Empty) && max >= 2 && max <= 8)
                                     {
                                         Console.Clear();
                                         Console.WriteLine("Create game\n");
@@ -731,7 +734,7 @@ namespace Client.BasicClasses
                                             Console.WriteLine("Connecting...\n");
                                             try
                                             {
-                                                res = ConnectPlayerAsync(p_storedStringData[0],p_playerName);
+                                                res = ConnectPlayerAsync(p_storedStringData[0], p_playerName);
                                             }
                                             catch (Exception e)
                                             {
@@ -779,7 +782,7 @@ namespace Client.BasicClasses
                             break;
                     }
                     break;
-                    #endregion
+                #endregion
                 case ClientState.Lobby:
                     #region MANAGE_LOBBY
                     switch (i_key.Key)
@@ -790,7 +793,7 @@ namespace Client.BasicClasses
                             break;
                     }
                     break;
-                    #endregion
+                #endregion
                 case ClientState.Game:
                     #region MANAGE_GAME
                     switch (i_key.Key)
@@ -812,11 +815,11 @@ namespace Client.BasicClasses
                                 MovePlayer(new int[] { 1, 0 });
                             break;
                         case ConsoleKey.Enter:
-                            if (!p_dead && radarTime==0)
+                            if (!p_dead && radarTime == 0)
                                 RadarUsed();
                             break;
                         case ConsoleKey.Spacebar:
-                            if (!p_dead && attackTime==0)
+                            if (!p_dead && attackTime == 0)
                                 PlayerAttacks();
                             break;
                         case ConsoleKey.Escape:
@@ -831,11 +834,11 @@ namespace Client.BasicClasses
                             break;
                     }
                     break;
-                    #endregion
+                #endregion
                 case ClientState.Spectator:
                     #region MANAGE_SPECTATOR
                     break;
-                    #endregion
+                #endregion
                 case ClientState.Results:
                     #region MANAGE_RESULTS
                     break;
@@ -876,14 +879,14 @@ namespace Client.BasicClasses
             }
         }
 
-        public ServerResponseInfo<bool,Exception> CreateGame(string i_gameName, int i_maxPlayers)
+        public ServerResponseInfo<bool, Exception> CreateGame(string i_gameName, int i_maxPlayers)
         {
             ServerResponseInfo<bool, Exception> res = new ServerResponseInfo<bool, Exception>();
             string path = "login/games/new";
-            List<object> info = new List<object>();
-            info.Add(i_gameName);
-            info.Add(i_maxPlayers);
-            HttpResponseMessage response = p_client.PostAsJsonAsync(path,info).Result;
+            List<string> info = new List<string>();
+            info.Add(i_gameName.SerializeObject());
+            info.Add(i_maxPlayers.SerializeObject());
+            HttpResponseMessage response = p_client.PostAsJsonAsync(path, info.SerializeObject()).Result;
             if (response.IsSuccessStatusCode)
             {
                 res = response.Content.ReadAsAsync<ServerResponseInfo<bool, Exception>>().Result;
@@ -897,29 +900,35 @@ namespace Client.BasicClasses
             List<string> info = new List<string>();
             info.Add(p_gameId);
             info.Add(playerName);
-            Task.WaitAll(p_client.PostAsJsonAsync(path,info));
+            Task.WaitAll(p_client.PostAsJsonAsync(path, info.SerializeObject()));
         }
 
         public void StartListeningLobbyEvents()
         {
-            p_lobbyHandler = new LobbyEventsHandler(this);
+            //p_lobbyHandler = new LobbyEventsHandler(this);
             //p_actor.SubscribeAsync<IGameLobbyEvents>(p_lobbyHandler);
+            p_lobbyThread = new Thread(new ThreadStart(StartListeningLobby));
+            p_lobbyThread.Start();
         }
 
         public void StartListeningGameEvents()
         {
-            p_gameHandler = new GameEventsHandler(this);
+            //p_gameHandler = new GameEventsHandler(this);
             //p_actor.SubscribeAsync<IGameEvents>(p_gameHandler);
+            p_gameSessionThread = new Thread(new ThreadStart(StartListeningGameSession));
+            p_gameSessionThread.Start();
         }
 
         public void StopListeningLobbyEvents()
         {
             //p_actor.UnsubscribeAsync<IGameLobbyEvents>(p_lobbyHandler);
+            p_lobbyThread.Abort();
         }
 
         public void StopListeningGameEvents()
         {
             //p_actor.UnsubscribeAsync<IGameEvents>(p_gameHandler);
+            p_gameSessionThread.Abort();
         }
 
         public void UpdateLobby()
@@ -928,7 +937,7 @@ namespace Client.BasicClasses
             Task.WaitAll(p_client.PostAsJsonAsync(path, p_gameId));
         }
 
-        public void StartGame(Dictionary<string,int[]> i_playerPositions)
+        public void StartGame(Dictionary<string, int[]> i_playerPositions)
         {
             radarTime = 0;
             attackTime = 0;
@@ -965,11 +974,11 @@ namespace Client.BasicClasses
             try
             {
                 string path = "gamemanager/move";
-                List<object> info = new List<object>();
-                info.Add(p_gameId);
-                info.Add(i_dir);
-                info.Add(playerName);
-                HttpResponseMessage httpRes = p_client.PostAsJsonAsync(path, info).Result;
+                List<string> info = new List<string>();
+                info.Add(p_gameId.SerializeObject());
+                info.Add(i_dir.SerializeObject());
+                info.Add(playerName.SerializeObject());
+                HttpResponseMessage httpRes = p_client.PostAsJsonAsync(path, info.SerializeObject()).Result;
                 if (httpRes.IsSuccessStatusCode)
                     response = httpRes.Content.ReadAsAsync<ServerResponseInfo<bool, Exception>>().Result;
             }
@@ -1012,7 +1021,7 @@ namespace Client.BasicClasses
                     }
                 }
                 Console.Beep();
-                RemoveMapInfoAsync(time,30000);
+                RemoveMapInfoAsync(time, 30000);
             }
             else
             {
@@ -1033,7 +1042,7 @@ namespace Client.BasicClasses
                 List<string> info = new List<string>();
                 info.Add(p_gameId);
                 info.Add(playerName);
-                HttpResponseMessage httpRes = p_client.PostAsJsonAsync(path, info).Result;
+                HttpResponseMessage httpRes = p_client.PostAsJsonAsync(path, info.SerializeObject()).Result;
                 if (httpRes.IsSuccessStatusCode)
                     response = httpRes.Content.ReadAsAsync<ServerResponseInfo<bool, Exception>>().Result;
                 AttackCooldown();
@@ -1057,7 +1066,7 @@ namespace Client.BasicClasses
 
         public void RadarUsed()
         {
-            ServerResponseInfo<bool, Exception,CellContent[][]> response = new ServerResponseInfo<bool, Exception,CellContent[][]>();
+            ServerResponseInfo<bool, Exception, CellContent[][]> response = new ServerResponseInfo<bool, Exception, CellContent[][]>();
             response.info = false;
             try
             {
@@ -1065,7 +1074,7 @@ namespace Client.BasicClasses
                 List<string> info = new List<string>();
                 info.Add(p_gameId);
                 info.Add(playerName);
-                HttpResponseMessage httpRes = p_client.PostAsJsonAsync(path, info).Result;
+                HttpResponseMessage httpRes = p_client.PostAsJsonAsync(path, info.SerializeObject()).Result;
                 if (httpRes.IsSuccessStatusCode)
                     response = httpRes.Content.ReadAsAsync<ServerResponseInfo<bool, Exception, CellContent[][]>>().Result;
                 RadarCooldown();
@@ -1086,7 +1095,7 @@ namespace Client.BasicClasses
                     }
                 }
                 Console.Beep();
-                RemoveMapInfoAsync(time,3000);
+                RemoveMapInfoAsync(time, 3000);
             }
             else
             {
@@ -1105,11 +1114,11 @@ namespace Client.BasicClasses
                 p_playerSight[deadPosVirt[0], deadPosVirt[1]].content = CellContent.Dead;
                 DateTime time = DateTime.Now;
                 p_playerSight[deadPosVirt[0], deadPosVirt[1]].time = time;
-                RemoveMapInfoAsync(time,3000);
+                RemoveMapInfoAsync(time, 3000);
             }
         }
 
-        public void PlayerDeadRecieved(int[] i_deadPos, string i_player,DeathReason i_reason)
+        public void PlayerDeadRecieved(int[] i_deadPos, string i_player, DeathReason i_reason)
         {
             PlayerDeadRecieved(i_deadPos);
             if (i_player.Equals(playerName))
@@ -1159,7 +1168,7 @@ namespace Client.BasicClasses
                 }
             }
             RefreshClient();
-            RemoveMapInfoAsync(time,3000);
+            RemoveMapInfoAsync(time, 3000);
         }
 
         public void PlayerDetected(int[] i_playerPos)
@@ -1170,7 +1179,7 @@ namespace Client.BasicClasses
                 p_playerSight[playerPosVirt[0], playerPosVirt[1]].content = CellContent.Player;
                 DateTime time = DateTime.Now;
                 p_playerSight[playerPosVirt[0], playerPosVirt[1]].time = time;
-                RemoveMapInfoAsync(time,3000);
+                RemoveMapInfoAsync(time, 3000);
             }
             RefreshClient();
         }
@@ -1183,7 +1192,7 @@ namespace Client.BasicClasses
                 p_playerSight[playerPosVirt[0], playerPosVirt[1]].content = CellContent.Aiming;
                 DateTime time = DateTime.Now;
                 p_playerSight[playerPosVirt[0], playerPosVirt[1]].time = time;
-                RemoveMapInfoAsync(time,500);
+                RemoveMapInfoAsync(time, 500);
             }
             Console.Beep();
             RefreshClient();
@@ -1294,7 +1303,7 @@ namespace Client.BasicClasses
                 RefreshClient();
                 await Task.Delay(1000);
                 radarTime--;
-            }       
+            }
         }
 
         public async Task AttackCooldown()
@@ -1315,7 +1324,7 @@ namespace Client.BasicClasses
             List<string> info = new List<string>();
             info.Add(i_player);
             info.Add(i_pass);
-            HttpResponseMessage response = p_client.PostAsJsonAsync(path,info).Result;
+            HttpResponseMessage response = p_client.PostAsJsonAsync(path, info.SerializeObject()).Result;
             if (response.IsSuccessStatusCode)
             {
                 res = response.Content.ReadAsAsync<ServerResponseInfo<bool, SqlException>>().Result;
@@ -1330,7 +1339,7 @@ namespace Client.BasicClasses
             info.Add(i_player);
             info.Add(i_pass);
             string path = "login";
-            HttpResponseMessage response = p_client.PostAsJsonAsync(path,info).Result;
+            HttpResponseMessage response = p_client.PostAsJsonAsync(path, info.SerializeObject()).Result;
             if (response.IsSuccessStatusCode)
             {
                 res = response.Content.ReadAsAsync<ServerResponseInfo<bool, SqlException>>().Result;
@@ -1343,14 +1352,111 @@ namespace Client.BasicClasses
             ServerResponseInfo<bool, Exception> res = new ServerResponseInfo<bool, Exception>();
             string path = "gamemanager/connect";
             List<string> info = new List<string>();
-            info.Add(i_actor);
-            info.Add(i_player);
-            HttpResponseMessage response = p_client.PostAsJsonAsync(path,info).Result;
+            info.Add(i_actor.SerializeObject());
+            info.Add(i_player.SerializeObject());
+            //string myIp = new WebClient().DownloadString(@"http://icanhazip.com").Trim();
+            //string[] addressArray = myIp.Split('.');
+            //byte[] byteArray = new byte[] { Byte.Parse(addressArray[0]), Byte.Parse(addressArray[1]), Byte.Parse(addressArray[2]), Byte.Parse(addressArray[3]) };
+            //byte[] byteArray = new byte[] { Byte.Parse("192"), Byte.Parse("168"), Byte.Parse("1"), Byte.Parse("132") };
+            IPHostEntry ipHostInfo = //Dns.GetHostEntry(Dns.GetHostName());
+                Dns.Resolve(Dns.GetHostName());
+            IPAddress ipAddress = ipHostInfo.AddressList[0];
+            info.Add(ipAddress.GetAddressBytes().SerializeObject());
+            HttpResponseMessage response = p_client.PostAsJsonAsync(path, info.SerializeObject()).Result;
             if (response.IsSuccessStatusCode)
             {
                 res = response.Content.ReadAsAsync<ServerResponseInfo<bool, Exception>>().Result;
             }
             return res;
+        }
+
+        /// <summary>
+        /// Refreshes lobby info
+        /// </summary>
+        /// <param name="i_playersList">Players in the lobby</param>
+        public void GameLobbyInfoUpdate(List<string> i_playersList)
+        {
+            //Clears console and sets color to white
+            Console.Clear();
+            Console.ForegroundColor = ConsoleColor.White;
+            //Shows all players in lobby
+            Console.WriteLine("Game Lobby\n");
+            for (int i = 0; i < i_playersList.Count; i++)
+            {
+                if (i_playersList[i].Equals(playerName))
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.Write("->");
+                }
+                else
+                    Console.ForegroundColor = ConsoleColor.White;
+                Console.WriteLine("\t" + (i + 1) + ". " + i_playersList[i]);
+            }
+            Console.ForegroundColor = ConsoleColor.White;
+            Console.WriteLine("\nEsc: Exit Lobby");
+            Console.WriteLine(DateTime.Now);
+            //Notifies server that player stills connected
+            PlayerStillConnected();
+        }
+
+        /// <summary>
+        /// Notifies that a player was killed by other
+        /// </summary>
+        /// <param name="i_player">Name of the killed player</param>
+        /// <param name="i_killer">Name of the player that killed it</param>
+        /// <param name="i_playerPos">Position vector of the killed player</param>
+        /// <param name="i_reason">Reason for the player death</param>
+        public void PlayerKilled(string i_player, string i_killer, int[] i_playerPos, DeathReason i_reason)
+        {
+            PlayerDeadRecieved(i_playerPos, i_player, i_killer, i_reason);
+        }
+
+        /// <summary>
+        /// Notifies that a player died
+        /// </summary>
+        /// <param name="i_player">Name of the dead player</param>
+        /// <param name="i_playerPos">Position vector of the killed player</param>
+        /// <param name="i_reason">Reason for the player death</param>
+        public void PlayerDead(string i_player, int[] i_playerPos, DeathReason i_reason)
+        {
+            PlayerDeadRecieved(i_playerPos, i_player, i_reason);
+        }
+
+        /// <summary>
+        /// Notifies of a list of positions where a bomb hit
+        /// </summary>
+        /// <param name="i_hitList">List of bomb hit position vectors</param>
+        public void BombHits(List<int[]> i_hitList)
+        {
+            BombHitsRecieved(i_hitList);
+        }
+
+        /// <summary>
+        /// Notifies that a player used radar
+        /// </summary>
+        /// <param name="o_playerPos">Player position vector</param>
+        public void RadarUsed(int[] i_playerPos)
+        {
+            PlayerDetected(i_playerPos);
+        }
+
+        /// <summary>
+        /// Notifies that game session was finished
+        /// </summary>
+        /// <param name="o_winner">Winner player name</param>
+        public void GameFinished(string i_winner)
+        {
+            FinishGame(i_winner);
+        }
+
+        public void StartListeningLobby()
+        {
+            LobbyListener.StartListening(this);
+        }
+
+        public void StartListeningGameSession()
+        {
+            GameSessionListener.StartListening(this);
         }
     }
 }

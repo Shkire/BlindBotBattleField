@@ -7,9 +7,10 @@ using GameManagerActor.Interfaces;
 using Microsoft.ServiceFabric.Services.Remoting.Client;
 using LoginService.Interfaces;
 using GameManagerActor.BasicClasses;
-using GameManagerActor.Interfaces.EventHandlers;
 using GameManagerActor.Interfaces.BasicClasses;
-using ServerResponse;
+using ExtensionMethods;
+using GameManagerActor.Sockets;
+using BasicClasses.Common;
 
 namespace GameManagerActor
 {
@@ -50,7 +51,7 @@ namespace GameManagerActor
         /// </summary>
         /// <param name="i_player">Player name</param>
         /// <returns>True if player could be connected, false if game is full or started and false with exception if game was removed (or other reasons for exception throw)</returns>
-        public async Task<ServerResponseInfo<bool, Exception>> ConnectPlayerAsync(string i_player)
+        public async Task<ServerResponseInfo<bool, Exception>> ConnectPlayerAsync(string i_player, byte[] i_address)
         {
             ServerResponseInfo<bool, Exception> res = new ServerResponseInfo<bool, Exception>();
             try
@@ -58,14 +59,14 @@ namespace GameManagerActor
                 //Get GameSession from StateManager
                 GameSession gameSession = await this.StateManager.GetStateAsync<GameSession>("gamesession");    
                 //Adds player to game if posible
-                if (gameSession.AddPlayer(i_player))
+                if (gameSession.AddPlayer(i_player,i_address))
                 {
                     //If first player in lobby
                     if (gameSession.playerCount == 1)
                     {
                         await this.UnregisterReminderAsync(GetReminder("RemoveIfEmpty"));
                         //Registers LobyCheck reminder
-                        await this.RegisterReminderAsync("LobbyCheck", null, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
+                        await this.RegisterReminderAsync("LobbyCheck", null, TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(10));
                     }
                     //Saves "gamesession" state
                     await this.StateManager.SetStateAsync("gamesession", gameSession);
@@ -109,8 +110,14 @@ namespace GameManagerActor
                     ActorEventSource.Current.Message("Jugador: "+player);
                 }
                 //Gets IGameLobbyEvents and sends GameLobbyInfoUpdate event with list of players
-                var ev = GetEvent<IGameLobbyEvents>();
-                ev.GameLobbyInfoUpdate(gameSession.playerList);
+                List<string> message = new List<string>();
+                message.Add("GameLobbyInfoUpdate");
+                message.Add(gameSession.playerList.SerializeObject());
+                foreach (string player in gameSession.playerList)
+                {
+                    SocketClient socket = new SocketClient();
+                    socket.StartLobbyClient(gameSession.GetPlayerAddress(player), message.SerializeObject() + "<EOF>");
+                }
             }
         }
 
@@ -195,20 +202,47 @@ namespace GameManagerActor
                 //If something happened
                 else if (!result.type.Equals(MovementResultType.Nothing))
                 {
-                    //Gets IGameEvents
-                    var ev = GetEvent<IGameEvents>();
                     //If player died
                     if (result.type.Equals(MovementResultType.PlayerDied))
-                        //Send PlayerDead event and notifies client that player died, where and reason
-                        ev.PlayerDead(i_player, result.playerPos, DeathReason.Hole);
+                    {  
+                        List<string> message = new List<string>();
+                        message.Add("PlayerDead");
+                        message.Add(i_player.SerializeObject());
+                        message.Add(gameSession.playerList.SerializeObject());
+                        message.Add(DeathReason.Hole.SerializeObject());
+                        foreach (string player in gameSession.playerList)
+                        {
+                            SocketClient socket = new SocketClient();
+                            socket.StartGameSessionClient(gameSession.GetPlayerAddress(player), message.SerializeObject() + "<EOF>");
+                        }
+                    }
                     //If player killed other player
                     else
-                        //Send PlayerKilled event and notifies client which player died, which killed it, death position vector and death reason 
-                        ev.PlayerKilled(result.killedPlayer, i_player, result.playerPos, DeathReason.PlayerSmash);
+                    {
+                        List<string> message = new List<string>();
+                        message.Add("PlayerKilled");
+                        message.Add(result.killedPlayer.SerializeObject());
+                        message.Add(i_player.SerializeObject());
+                        message.Add(result.playerPos.SerializeObject());
+                        message.Add(DeathReason.PlayerSmash.SerializeObject());
+                        foreach (string player in gameSession.playerList)
+                        {
+                            SocketClient socket = new SocketClient();
+                            socket.StartGameSessionClient(gameSession.GetPlayerAddress(player), message.SerializeObject() + "<EOF>");
+                        }
+                    }
                     //If there's only one player alive
                     if (gameSession.AlivePlayers().Count == 1)
-                        //Send GameFinished event and notifies client that game has finished and which player won
-                        ev.GameFinished(gameSession.AlivePlayers()[0]);
+                    {
+                        List<string> message = new List<string>();
+                        message.Add("GameFinished");
+                        message.Add(gameSession.AlivePlayers()[0].SerializeObject());
+                        foreach (string player in gameSession.playerList)
+                        {
+                            SocketClient socket = new SocketClient();
+                            socket.StartGameSessionClient(gameSession.GetPlayerAddress(player), message.SerializeObject() + "<EOF>");
+                        }
+                    }
                 }
                 //Saves "gamesession" state
                 await this.StateManager.SetStateAsync("gamesession", gameSession);
@@ -243,24 +277,45 @@ namespace GameManagerActor
                 //Otherwise
                 else
                 {
-                    //Gets IGameEvents
-                    var ev = GetEvent<IGameEvents>();
-                    //Sends BombHits event to clients and notifies of hit area
-                    ev.BombHits(result.hitPoints);
+                    List<string> message = new List<string>();
+                    message.Add("BombHits");
+                    message.Add(result.hitPoints.SerializeObject());
+                    foreach (string player in gameSession.playerList)
+                    {
+                        SocketClient socket = new SocketClient();
+                        socket.StartGameSessionClient(gameSession.GetPlayerAddress(player), message.SerializeObject() + "<EOF>");
+                    }
                     //If there are players killed by the attack
                     if (result.killedPlayersDict.Count > 0)
                         //For each player
                         foreach (string killedPlayerId in result.killedPlayersDict.Keys)
                         {
-                            //Sends PlayerKilled event to clients and notifies which player was killed, player position vector and death reason
-                            ev.PlayerKilled(killedPlayerId, i_player, result.killedPlayersDict[killedPlayerId], DeathReason.PlayerHit);
+                            message = new List<string>();
+                            message.Add("PlayerKilled");
+                            message.Add(killedPlayerId.SerializeObject());
+                            message.Add(i_player.SerializeObject());
+                            message.Add(result.killedPlayersDict[killedPlayerId].SerializeObject());
+                            message.Add(DeathReason.PlayerHit.SerializeObject());
+                            foreach (string player in gameSession.playerList)
+                            {
+                                SocketClient socket = new SocketClient();
+                                socket.StartGameSessionClient(gameSession.GetPlayerAddress(player), message.SerializeObject() + "<EOF>");
+                            }
                         }
                     //Saves "gamesession" state
                     await this.StateManager.SetStateAsync("gamesession", gameSession);
                     //If there's only one player alive
                     if (gameSession.AlivePlayers().Count == 1)
-                        //Sends GameFinished event to clients
-                        ev.GameFinished(gameSession.AlivePlayers()[0]);
+                    {
+                        message = new List<string>();
+                        message.Add("GameFinished");
+                        message.Add(gameSession.AlivePlayers()[0].SerializeObject());
+                        foreach (string player in gameSession.playerList)
+                        {
+                            SocketClient socket = new SocketClient();
+                            socket.StartGameSessionClient(gameSession.GetPlayerAddress(player), message.SerializeObject() + "<EOF>");
+                        }
+                    }
                 }
             }
             catch (Exception e)
@@ -297,9 +352,14 @@ namespace GameManagerActor
                     //If player wasn't dead
                     if (result.mapInfo != null)
                     {
-                        //Gets IGameEvents and send RadarUsed to clients with player position vector
-                        var ev = GetEvent<IGameEvents>();
-                        ev.RadarUsed(gameSession.GetPlayerPos(i_player));
+                        List<string> message = new List<string>();
+                        message.Add("RadarUsed");
+                        message.Add(gameSession.GetPlayerPos(i_player).SerializeObject());
+                        foreach (string player in gameSession.playerList)
+                        {
+                            SocketClient socket = new SocketClient();
+                            socket.StartGameSessionClient(gameSession.GetPlayerAddress(player), message.SerializeObject() + "<EOF>");
+                        }
                         //Adds map info to response
                         response.additionalInfo = result.mapInfo;
                     }
@@ -315,34 +375,60 @@ namespace GameManagerActor
 
         public async Task ReceiveReminderAsync(string reminderName, byte[] context, TimeSpan dueTime, TimeSpan period)
         {
+            ActorEventSource.Current.Message("REMINDER RECIEVED");
+            ActorEventSource.Current.Message("REMINDER NAME: "+reminderName);
             //Gets "gamesession" from Statemanager
             GameSession gameSession = await this.StateManager.GetStateAsync<GameSession>("gamesession");
+            ActorEventSource.Current.Message("REMINDER: State gotten");
             //If LobbyCheck reminder
             if (reminderName.Equals("LobbyCheck"))
             {
-                //Get players that are not connected
-                List<string> removedPlayers = gameSession.CheckPlayers();
-                //If there are players
-                if (removedPlayers.Count > 0)
-                    //Disconnect each player
-                    foreach (string removingPlayer in removedPlayers)
-                        await PlayerDisconnectAsync(removingPlayer);
-                //If game is in Lobby state and lobby is full
-                if (gameSession.state.Equals(GameState.Lobby) && gameSession.isFull)
+                try
                 {
-                    //Unregister LobbyCheck reminder
-                    await this.UnregisterReminderAsync(GetReminder("LobbyCheck"));
-                    //Prepare game
-                    gameSession.PrepareGame();
-                    //Gets IGameLobbyEvents and send GameStart event to clients
-                    var ev = GetEvent<IGameLobbyEvents>();
-                    ev.GameStart(gameSession.getPlayerPositions);
-                    await this.RegisterReminderAsync("TurretAim", null , TimeSpan.FromSeconds(5), TimeSpan.FromMilliseconds(-1));
+                    ActorEventSource.Current.Message("REMINDER: LOBBY CHECK");
+                    //Get players that are not connected
+                    List<string> removedPlayers = gameSession.CheckPlayers();
+                    //If there are players
+                    if (removedPlayers.Count > 0)
+                        //Disconnect each player
+                        foreach (string removingPlayer in removedPlayers)
+                            await PlayerDisconnectAsync(removingPlayer);
+                    //If game is in Lobby state and lobby is full
+                    if (gameSession.state.Equals(GameState.Lobby) && gameSession.isFull)
+                    {
+                        ActorEventSource.Current.Message("REMINDER: ALL PLAYERS");
+                        //Unregister LobbyCheck reminder
+                        await this.UnregisterReminderAsync(GetReminder("LobbyCheck"));
+                        ActorEventSource.Current.Message("REMINDER: UNREGISTERED");
+                        //Prepare game
+                        gameSession.PrepareGame();
+                        ActorEventSource.Current.Message("REMINDER: GAME PREPARED");
+                        List<string> message = new List<string>();
+                        ActorEventSource.Current.Message("REMINDER: STRINGLIST CREATED");
+                        message.Add("GameStart");
+                        ActorEventSource.Current.Message("REMINDER: GAMESTART ADDED");
+                        message.Add(gameSession.getPlayerPositions.ToSerializable().SerializeObject());
+                        ActorEventSource.Current.Message("REMINDER: PLAYER POSITIONS ADDED");
+                        ActorEventSource.Current.Message("REMINDER: MESSAGE CREATED");
+                        ActorEventSource.Current.Message("REMINDER: MESSAGE : " + message.SerializeObject());
+                        ActorEventSource.Current.Message("REMINDER: MESSAGE LENGTH: " + message.SerializeObject().Length);
+                        foreach (string player in gameSession.playerList)
+                        {
+                            SocketClient socket = new SocketClient();
+                            socket.StartLobbyClient(gameSession.GetPlayerAddress(player), message.SerializeObject() + "<EOF>");
+                        }
+                        await this.RegisterReminderAsync("TurretAim", null, TimeSpan.FromSeconds(5), TimeSpan.FromMilliseconds(-1));
+
+                    }
+                    //otherwise
+                    else
+                        //Update lobby info
+                        await UpdateLobbyInfoAsync();
                 }
-                //otherwise
-                else
-                    //Update lobby info
-                    await UpdateLobbyInfoAsync();
+                catch (Exception e)
+                {
+                    ActorEventSource.Current.Message(e.ToString());
+                }
             }
             if (reminderName.Equals("RemoveIfEmpty"))
             {
@@ -354,8 +440,14 @@ namespace GameManagerActor
                 if (context == null)
                 {
                     int[] aimPos = gameSession.GetTurretAimPos(PLAYER_ATTACK_RATE);
-                    var ev = GetEvent<IGameEvents>();
-                    ev.TurretAiming(aimPos);
+                    List<string> message = new List<string>();
+                    message.Add("TurretAiming");
+                    message.Add(aimPos.SerializeObject());
+                    foreach (string player in gameSession.playerList)
+                    {
+                        SocketClient socket = new SocketClient();
+                        socket.StartGameSessionClient(gameSession.GetPlayerAddress(player), message.SerializeObject() + "<EOF>");
+                    }
                     await this.RegisterReminderAsync("TurretAim", new byte[] { 1, (byte)aimPos[0], (byte)aimPos[1] }, TimeSpan.FromSeconds(1), TimeSpan.FromMilliseconds(-1));
                 }
                 else
@@ -363,8 +455,14 @@ namespace GameManagerActor
                     int counter = context[0];
                     int[] aimPos = new int[] { context[1], context[2] };
                     counter++;
-                    var ev = GetEvent<IGameEvents>();
-                    ev.TurretAiming(aimPos);
+                    List<string> message = new List<string>();
+                    message.Add("TurretAiming");
+                    message.Add(aimPos.SerializeObject());
+                    foreach (string player in gameSession.playerList)
+                    {
+                        SocketClient socket = new SocketClient();
+                        socket.StartGameSessionClient(gameSession.GetPlayerAddress(player), message.SerializeObject() + "<EOF>");
+                    }
                     if (counter < 5)
                         await this.RegisterReminderAsync("TurretAim", new byte[] { (byte)counter, (byte)aimPos[0], (byte)aimPos[1] }, TimeSpan.FromSeconds(1), TimeSpan.FromMilliseconds(-1));
                     else
@@ -375,22 +473,42 @@ namespace GameManagerActor
             {
                 int[] aimpos = new int[] { context[0], context[1] };
                 AttackResult result = gameSession.TurretAttacks(aimpos, PLAYER_ATTACK_RATE);
-                //Gets IGameEvents
-                var ev = GetEvent<IGameEvents>();
-                //Sends BombHits event to clients and notifies of hit area
-                ev.BombHits(result.hitPoints);
+                List<string> message = new List<string>();
+                message.Add("BombHits");
+                message.Add(result.hitPoints.SerializeObject());
+                foreach (string player in gameSession.playerList)
+                {
+                    SocketClient socket = new SocketClient();
+                    socket.StartGameSessionClient(gameSession.GetPlayerAddress(player), message.SerializeObject() + "<EOF>");
+                }
                 //If there are players killed by the attack
                 if (result.killedPlayersDict.Count > 0)
                     //For each player
                     foreach (string killedPlayerId in result.killedPlayersDict.Keys)
                     {
-                        //Sends PlayerKilled event to clients and notifies which player was killed, player position vector and death reason
-                        ev.PlayerDead(killedPlayerId, result.killedPlayersDict[killedPlayerId], DeathReason.Turret);
+                        message = new List<string>();
+                        message.Add("PlayerDead");
+                        message.Add(killedPlayerId.SerializeObject());
+                        message.Add(result.killedPlayersDict[killedPlayerId].SerializeObject());
+                        message.Add(DeathReason.Turret.SerializeObject());
+                        foreach (string player in gameSession.playerList)
+                        {
+                            SocketClient socket = new SocketClient();
+                            socket.StartGameSessionClient(gameSession.GetPlayerAddress(player), message.SerializeObject() + "<EOF>");
+                        }
                     }
                 //If there's only one player alive
                 if (gameSession.AlivePlayers().Count == 1)
-                    //Sends GameFinished event to clients
-                    ev.GameFinished(gameSession.AlivePlayers()[0]);
+                {
+                    message = new List<string>();
+                    message.Add("GameFinished");
+                    message.Add(gameSession.AlivePlayers()[0].SerializeObject());
+                    foreach (string player in gameSession.playerList)
+                    {
+                        SocketClient socket = new SocketClient();
+                        socket.StartGameSessionClient(gameSession.GetPlayerAddress(player), message.SerializeObject() + "<EOF>");
+                    }
+                }
                 await this.RegisterReminderAsync("TurretAim", null, TimeSpan.FromSeconds(5), TimeSpan.FromMilliseconds(-1));
             }
             //Saves "gamesession" state

@@ -42,3 +42,7 @@ C:\Users\danie\Documents\GitHub\BlindBotBattleField\WebApi\bin\x64\Debug\Newtons
 C:\Users\danie\Documents\GitHub\BlindBotBattleField\WebApi\bin\x64\Debug\System.Net.Http.Formatting.xml
 C:\Users\danie\Documents\GitHub\BlindBotBattleField\WebApi\bin\x64\Debug\System.Web.Http.xml
 C:\Users\danie\Documents\GitHub\BlindBotBattleField\WebApi\bin\x64\Debug\System.Web.Http.Owin.xml
+C:\Users\danie\Documents\GitHub\BlindBotBattleField\WebApi\bin\x64\Debug\ExtensionMethods.dll
+C:\Users\danie\Documents\GitHub\BlindBotBattleField\WebApi\bin\x64\Debug\ExtensionMethods.pdb
+C:\Users\danie\Documents\GitHub\BlindBotBattleField\WebApi\bin\x64\Debug\BasicClasses.dll
+C:\Users\danie\Documents\GitHub\BlindBotBattleField\WebApi\bin\x64\Debug\BasicClasses.pdb

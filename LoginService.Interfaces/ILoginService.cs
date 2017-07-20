@@ -2,9 +2,9 @@
 using Microsoft.ServiceFabric.Services.Remoting;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using ServerResponse;
 using System.Data.SqlClient;
 using System;
+using BasicClasses.Common;
 
 namespace LoginService.Interfaces
 {

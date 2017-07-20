@@ -49,3 +49,7 @@ C:\Users\danie\Documents\GitHub\BlindBotBattleField\GameManagerActor\bin\x64\Deb
 C:\Users\danie\Documents\GitHub\BlindBotBattleField\GameManagerActor\bin\x64\Debug\Microsoft.ServiceFabric.Services.Remoting.xml
 C:\Users\danie\Documents\GitHub\BlindBotBattleField\GameManagerActor\bin\x64\Debug\LoginService.Interfaces.dll
 C:\Users\danie\Documents\GitHub\BlindBotBattleField\GameManagerActor\bin\x64\Debug\LoginService.Interfaces.pdb
+C:\Users\danie\Documents\GitHub\BlindBotBattleField\GameManagerActor\bin\x64\Debug\ExtensionMethods.dll
+C:\Users\danie\Documents\GitHub\BlindBotBattleField\GameManagerActor\bin\x64\Debug\ExtensionMethods.pdb
+C:\Users\danie\Documents\GitHub\BlindBotBattleField\GameManagerActor\bin\x64\Debug\BasicClasses.dll
+C:\Users\danie\Documents\GitHub\BlindBotBattleField\GameManagerActor\bin\x64\Debug\BasicClasses.pdb

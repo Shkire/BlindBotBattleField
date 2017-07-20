@@ -139,6 +139,8 @@ namespace GameManagerActor.BasicClasses
         /// </summary>
         private Dictionary<string, int[]> p_playerPositions;
 
+        private Dictionary<string, byte[]> p_playerAddresses;
+
         /// <summary>
         /// Bidimensional array with current map cells status
         /// </summary>
@@ -340,6 +342,7 @@ namespace GameManagerActor.BasicClasses
             p_playerList = new List<string>();
             p_connectedPlayers = new List<string>();
             p_playerPositions = new Dictionary<string, int[]>();
+            p_playerAddresses = new Dictionary<string, byte[]>();
             p_deadPlayers = new List<string>();
             state = GameState.Lobby;
         }
@@ -375,7 +378,7 @@ namespace GameManagerActor.BasicClasses
         /// </summary>
         /// <param name="i_player">Player to add</param>
         /// <returns>True if player could be added, false otherwise</returns>
-        public bool AddPlayer(string i_player)
+        public bool AddPlayer(string i_player, byte[] i_address)
         {
             //If game is in LobbyState and number of players is lower than max
             if (state.Equals(GameState.Lobby) && p_playerList.Count < p_maxPlayers)
@@ -384,6 +387,9 @@ namespace GameManagerActor.BasicClasses
                 p_playerList.Add(i_player);
                 //Adds player to list of players that still playing
                 p_connectedPlayers.Add(i_player);
+
+                p_playerAddresses.Add(i_player, i_address);
+
                 //Player added correctly
                 return true;
             }
@@ -412,6 +418,9 @@ namespace GameManagerActor.BasicClasses
         {
             //Removes player from list of players that still playing
             p_connectedPlayers.Remove(i_player);
+
+            p_playerAddresses.Remove(i_player);
+
             //If game state is Lobby
             if (state.Equals(GameState.Lobby))
                 //Removes player from player list
@@ -743,6 +752,11 @@ namespace GameManagerActor.BasicClasses
             else
                 attackPosY = rnd.Next(0 - i_attackRange, p_mapInfo[0].Length + i_attackRange);
             return new int[] { attackPosX, attackPosY };
+        }
+
+        public byte[] GetPlayerAddress(string i_player)
+        {
+            return p_playerAddresses[i_player];
         }
     }
 }

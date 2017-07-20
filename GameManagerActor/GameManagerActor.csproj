@@ -100,6 +100,7 @@
     <Compile Include="GameManagerActor.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="ActorEventSource.cs" />
+    <Compile Include="Sockets.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="PackageRoot\ServiceManifest.xml" />
@@ -108,6 +109,14 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\BasicClasses\BasicClasses.csproj">
+      <Project>{9B8A279A-1D43-4964-AF7D-15DB4FE13691}</Project>
+      <Name>BasicClasses</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\ExtensionMethods\ExtensionMethods.csproj">
+      <Project>{E17B9CE4-CCDD-4409-B885-7FB170C7B562}</Project>
+      <Name>ExtensionMethods</Name>
+    </ProjectReference>
     <ProjectReference Include="..\GameManagerActor.Interfaces\GameManagerActor.Interfaces.csproj">
       <Project>{9708EA16-C937-4E21-93FF-347B43D8AB6E}</Project>
       <Name>GameManagerActor.Interfaces</Name>

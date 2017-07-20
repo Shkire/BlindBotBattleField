@@ -128,24 +128,3 @@ namespace GameManagerActor.Interfaces.BasicClasses
         }
     }
 }
-
-namespace ServerResponse
-{
-    [Serializable]
-    public class ServerResponseInfo<T>
-    {
-        public T info { get; set; }
-    }
-
-    [Serializable]
-    public class ServerResponseInfo<T, E>: ServerResponseInfo<T>
-    {
-        public E exception { get; set; }
-    }
-
-    [Serializable]
-    public class ServerResponseInfo<T,E,TT>: ServerResponseInfo<T,E>
-    {
-        public TT additionalInfo { get; set; }
-    }
-}

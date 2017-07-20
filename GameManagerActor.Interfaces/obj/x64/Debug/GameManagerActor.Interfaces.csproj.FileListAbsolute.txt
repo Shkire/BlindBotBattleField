@@ -41,3 +41,5 @@ C:\Users\danie\Documents\GitHub\BlindBotBattleField\GameManagerActor.Interfaces\
 C:\Users\danie\Documents\GitHub\BlindBotBattleField\GameManagerActor.Interfaces\bin\x64\Debug\Microsoft.ServiceFabric.FabricTransport.xml
 C:\Users\danie\Documents\GitHub\BlindBotBattleField\GameManagerActor.Interfaces\bin\x64\Debug\Microsoft.ServiceFabric.Services.Remoting.xml
 C:\Users\danie\Documents\GitHub\BlindBotBattleField\GameManagerActor.Interfaces\obj\x64\Debug\GameManagerActor.Interfaces.csprojResolveAssemblyReference.cache
+C:\Users\danie\Documents\GitHub\BlindBotBattleField\GameManagerActor.Interfaces\bin\x64\Debug\BasicClasses.dll
+C:\Users\danie\Documents\GitHub\BlindBotBattleField\GameManagerActor.Interfaces\bin\x64\Debug\BasicClasses.pdb
