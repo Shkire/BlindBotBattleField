@@ -68,10 +68,6 @@
       <HintPath>..\packages\Microsoft.ServiceFabric.Services.Remoting.2.6.220\lib\net45\Microsoft.ServiceFabric.Services.Remoting.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="Newtonsoft.Json, Version=6.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <HintPath>..\packages\Newtonsoft.Json.6.0.4\lib\net45\Newtonsoft.Json.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Fabric, Version=5.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=AMD64">
@@ -86,10 +82,6 @@
       <HintPath>..\packages\Microsoft.ServiceFabric.5.6.220\lib\net45\System.Fabric.Strings.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="System.Net.Http.Formatting, Version=5.2.3.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <HintPath>..\packages\Microsoft.AspNet.WebApi.Client.5.2.3\lib\net45\System.Net.Http.Formatting.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
     <Reference Include="System.Runtime.Serialization" />
     <Reference Include="System.ServiceModel" />
     <Reference Include="System.Xml.Linq" />
@@ -100,10 +92,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="BasicClasses.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Sockets.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
@@ -118,13 +108,9 @@
       <Project>{E17B9CE4-CCDD-4409-B885-7FB170C7B562}</Project>
       <Name>ExtensionMethods</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\GameManagerActor.Interfaces\GameManagerActor.Interfaces.csproj">
-      <Project>{9708EA16-C937-4E21-93FF-347B43D8AB6E}</Project>
-      <Name>GameManagerActor.Interfaces</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\LoginService.Interfaces\LoginService.Interfaces.csproj">
-      <Project>{C4DD00EE-EF87-4B53-B0BA-DF7B5D6A2048}</Project>
-      <Name>LoginService.Interfaces</Name>
+    <ProjectReference Include="..\ClientBasicClasses\ClientBasicClasses.csproj">
+      <Project>{EE4E8BF8-7067-4667-A06F-136B87EDBE2E}</Project>
+      <Name>ClientBasicClasses</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

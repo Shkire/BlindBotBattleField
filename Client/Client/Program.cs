@@ -1,4 +1,4 @@
-﻿using Client.BasicClasses;
+﻿using ClientBasicClasses;
 using System;
 using System.Threading.Tasks;
 

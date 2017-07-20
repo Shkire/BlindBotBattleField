@@ -53,3 +53,5 @@ C:\Users\danie\Documents\GitHub\BlindBotBattleField\GameManagerActor\bin\x64\Deb
 C:\Users\danie\Documents\GitHub\BlindBotBattleField\GameManagerActor\bin\x64\Debug\ExtensionMethods.pdb
 C:\Users\danie\Documents\GitHub\BlindBotBattleField\GameManagerActor\bin\x64\Debug\BasicClasses.dll
 C:\Users\danie\Documents\GitHub\BlindBotBattleField\GameManagerActor\bin\x64\Debug\BasicClasses.pdb
+C:\Users\danie\Documents\GitHub\BlindBotBattleField\GameManagerActor\bin\x64\Debug\ServerBasicClasses.dll
+C:\Users\danie\Documents\GitHub\BlindBotBattleField\GameManagerActor\bin\x64\Debug\ServerBasicClasses.pdb

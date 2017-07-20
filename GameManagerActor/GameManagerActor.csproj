@@ -95,7 +95,6 @@
     <Reference Include="System.ServiceModel" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="BasicClasses.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="GameManagerActor.cs" />
     <Compile Include="Program.cs" />
@@ -124,6 +123,10 @@
     <ProjectReference Include="..\LoginService.Interfaces\LoginService.Interfaces.csproj">
       <Project>{C4DD00EE-EF87-4B53-B0BA-DF7B5D6A2048}</Project>
       <Name>LoginService.Interfaces</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\ServerBasicClasses\ServerBasicClasses.csproj">
+      <Project>{881A1815-6B5F-4A46-9F63-DC225659261C}</Project>
+      <Name>ServerBasicClasses</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

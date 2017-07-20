@@ -1,4 +1,4 @@
-﻿using GameManagerActor.Interfaces.BasicClasses;
+﻿using BasicClasses.GameManager;
 using Microsoft.ServiceFabric.Actors;
 using System.Collections.Generic;
 

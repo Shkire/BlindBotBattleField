@@ -19,6 +19,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExtensionMethods", "Extensi
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BasicClasses", "BasicClasses\BasicClasses.csproj", "{9B8A279A-1D43-4964-AF7D-15DB4FE13691}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ServerBasicClasses", "ServerBasicClasses\ServerBasicClasses.csproj", "{881A1815-6B5F-4A46-9F63-DC225659261C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -81,6 +83,14 @@ Global
 		{9B8A279A-1D43-4964-AF7D-15DB4FE13691}.Release|Any CPU.Build.0 = Release|Any CPU
 		{9B8A279A-1D43-4964-AF7D-15DB4FE13691}.Release|x64.ActiveCfg = Release|Any CPU
 		{9B8A279A-1D43-4964-AF7D-15DB4FE13691}.Release|x64.Build.0 = Release|Any CPU
+		{881A1815-6B5F-4A46-9F63-DC225659261C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{881A1815-6B5F-4A46-9F63-DC225659261C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{881A1815-6B5F-4A46-9F63-DC225659261C}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{881A1815-6B5F-4A46-9F63-DC225659261C}.Debug|x64.Build.0 = Debug|Any CPU
+		{881A1815-6B5F-4A46-9F63-DC225659261C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{881A1815-6B5F-4A46-9F63-DC225659261C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{881A1815-6B5F-4A46-9F63-DC225659261C}.Release|x64.ActiveCfg = Release|Any CPU
+		{881A1815-6B5F-4A46-9F63-DC225659261C}.Release|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

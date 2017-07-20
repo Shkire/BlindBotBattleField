@@ -1,12 +1,9 @@
 ﻿using BasicClasses.Common;
+using BasicClasses.GameManager;
 using ExtensionMethods;
 using GameManagerActor.Interfaces;
-using GameManagerActor.Interfaces.BasicClasses;
-using LoginService.Interfaces;
-using LoginService.Interfaces.BasicClasses;
 using Microsoft.ServiceFabric.Actors;
 using Microsoft.ServiceFabric.Actors.Client;
-using Microsoft.ServiceFabric.Services.Remoting.Client;
 using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;

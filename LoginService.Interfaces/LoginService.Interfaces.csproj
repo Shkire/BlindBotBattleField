@@ -90,7 +90,6 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="BasicClasses.cs" />
     <Compile Include="ILoginService.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
@@ -98,10 +97,6 @@
     <ProjectReference Include="..\BasicClasses\BasicClasses.csproj">
       <Project>{9B8A279A-1D43-4964-AF7D-15DB4FE13691}</Project>
       <Name>BasicClasses</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\GameManagerActor.Interfaces\GameManagerActor.Interfaces.csproj">
-      <Project>{9708EA16-C937-4E21-93FF-347B43D8AB6E}</Project>
-      <Name>GameManagerActor.Interfaces</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

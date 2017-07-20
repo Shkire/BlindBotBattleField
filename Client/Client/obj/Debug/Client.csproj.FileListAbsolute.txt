@@ -18,16 +18,13 @@ C:\Users\danie\Documents\GitHub\BlindBotBattleField\Client\Client\obj\Debug\Clie
 C:\Users\danie\Documents\GitHub\BlindBotBattleField\Client\Client\obj\Debug\Client.pdb
 C:\Users\danie\Documents\GitHub\BlindBotBattleField\Client\Client\bin\Debug\Client.exe
 C:\Users\danie\Documents\GitHub\BlindBotBattleField\Client\Client\bin\Debug\Client.pdb
-C:\Users\danie\Documents\GitHub\BlindBotBattleField\Client\Client\bin\Debug\GameManagerActor.Interfaces.dll
 C:\Users\danie\Documents\GitHub\BlindBotBattleField\Client\Client\bin\Debug\Microsoft.ServiceFabric.Actors.dll
 C:\Users\danie\Documents\GitHub\BlindBotBattleField\Client\Client\bin\Debug\Microsoft.ServiceFabric.Internal.dll
 C:\Users\danie\Documents\GitHub\BlindBotBattleField\Client\Client\bin\Debug\Microsoft.ServiceFabric.Services.dll
 C:\Users\danie\Documents\GitHub\BlindBotBattleField\Client\Client\bin\Debug\Microsoft.ServiceFabric.Internal.Strings.dll
-C:\Users\danie\Documents\GitHub\BlindBotBattleField\Client\Client\bin\Debug\GameManagerActor.Interfaces.pdb
 C:\Users\danie\Documents\GitHub\BlindBotBattleField\Client\Client\bin\Debug\Microsoft.ServiceFabric.Actors.xml
 C:\Users\danie\Documents\GitHub\BlindBotBattleField\Client\Client\bin\Debug\Microsoft.ServiceFabric.Services.xml
 C:\Users\danie\Documents\GitHub\BlindBotBattleField\Client\Client\obj\Debug\Client.csprojResolveAssemblyReference.cache
-C:\Users\danie\Documents\GitHub\BlindBotBattleField\Client\Client\bin\Debug\LoginService.Interfaces.dll
 C:\Users\danie\Documents\GitHub\BlindBotBattleField\Client\Client\bin\Debug\Microsoft.ServiceFabric.Data.dll
 C:\Users\danie\Documents\GitHub\BlindBotBattleField\Client\Client\bin\Debug\Microsoft.ServiceFabric.Data.Interfaces.dll
 C:\Users\danie\Documents\GitHub\BlindBotBattleField\Client\Client\bin\Debug\Microsoft.ServiceFabric.FabricTransport.dll
@@ -36,7 +33,6 @@ C:\Users\danie\Documents\GitHub\BlindBotBattleField\Client\Client\bin\Debug\Syst
 C:\Users\danie\Documents\GitHub\BlindBotBattleField\Client\Client\bin\Debug\System.Fabric.Management.ServiceModel.dll
 C:\Users\danie\Documents\GitHub\BlindBotBattleField\Client\Client\bin\Debug\System.Fabric.Management.ServiceModel.XmlSerializers.dll
 C:\Users\danie\Documents\GitHub\BlindBotBattleField\Client\Client\bin\Debug\System.Fabric.Strings.dll
-C:\Users\danie\Documents\GitHub\BlindBotBattleField\Client\Client\bin\Debug\LoginService.Interfaces.pdb
 C:\Users\danie\Documents\GitHub\BlindBotBattleField\Client\Client\bin\Debug\Microsoft.ServiceFabric.Data.xml
 C:\Users\danie\Documents\GitHub\BlindBotBattleField\Client\Client\bin\Debug\Microsoft.ServiceFabric.Data.Interfaces.xml
 C:\Users\danie\Documents\GitHub\BlindBotBattleField\Client\Client\bin\Debug\Microsoft.ServiceFabric.FabricTransport.xml
@@ -50,3 +46,5 @@ C:\Users\danie\Documents\GitHub\BlindBotBattleField\Client\Client\bin\Debug\Exte
 C:\Users\danie\Documents\GitHub\BlindBotBattleField\Client\Client\bin\Debug\ExtensionMethods.pdb
 C:\Users\danie\Documents\GitHub\BlindBotBattleField\Client\Client\bin\Debug\BasicClasses.dll
 C:\Users\danie\Documents\GitHub\BlindBotBattleField\Client\Client\bin\Debug\BasicClasses.pdb
+C:\Users\danie\Documents\GitHub\BlindBotBattleField\Client\Client\bin\Debug\ClientBasicClasses.dll
+C:\Users\danie\Documents\GitHub\BlindBotBattleField\Client\Client\bin\Debug\ClientBasicClasses.pdb

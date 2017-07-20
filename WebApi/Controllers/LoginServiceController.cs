@@ -1,7 +1,7 @@
 ﻿using BasicClasses.Common;
+using BasicClasses.LoginService;
 using ExtensionMethods;
 using LoginService.Interfaces;
-using LoginService.Interfaces.BasicClasses;
 using Microsoft.ServiceFabric.Services.Remoting.Client;
 using System;
 using System.Collections.Generic;

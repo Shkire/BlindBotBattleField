@@ -1,9 +1,9 @@
 ﻿using System.Threading.Tasks;
 using Microsoft.ServiceFabric.Actors;
 using GameManagerActor.Interfaces.EventHandlers;
-using GameManagerActor.Interfaces.BasicClasses;
 using System;
 using BasicClasses.Common;
+using BasicClasses.GameManager;
 
 namespace GameManagerActor.Interfaces
 {

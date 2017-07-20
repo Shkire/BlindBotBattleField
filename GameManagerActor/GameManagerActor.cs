@@ -6,11 +6,11 @@ using Microsoft.ServiceFabric.Actors.Runtime;
 using GameManagerActor.Interfaces;
 using Microsoft.ServiceFabric.Services.Remoting.Client;
 using LoginService.Interfaces;
-using GameManagerActor.BasicClasses;
-using GameManagerActor.Interfaces.BasicClasses;
 using ExtensionMethods;
 using GameManagerActor.Sockets;
 using BasicClasses.Common;
+using ServerBasicClasses.GameManager;
+using BasicClasses.GameManager;
 
 namespace GameManagerActor
 {
