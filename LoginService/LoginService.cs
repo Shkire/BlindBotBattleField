@@ -60,7 +60,7 @@ namespace LoginService
                     //Opens SQL connection
                     connection.Open();
                     //Creates query string
-                    string query = "SELECT Pass FROM Players WHERE Pass = '" + i_player + "'";
+                    string query = "SELECT Pass FROM Players WHERE Player = '" + i_player + "'";
                     //Creates SQL Command using query and connection
                     using (SqlCommand command = new SqlCommand(query, connection))
                     {

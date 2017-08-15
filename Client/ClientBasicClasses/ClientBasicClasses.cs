@@ -48,6 +48,7 @@ namespace ClientBasicClasses
         const int COOLDOWN_RADAR = 30;
         const int COOLDOWN_ATTACK = 10;
         private ClientState p_state;
+        private GameTutorial p_tutorial;
         private int[] p_playerPosReal;
         private int[] p_playerPosVirt;
         private ClientCellInfo[,] p_playerSight;
@@ -352,6 +353,8 @@ namespace ClientBasicClasses
                                     p_pointer = 0;
                                     break;
                                 case 1:
+                                    p_state = ClientState.Start_HowTo;
+                                    p_tutorial = new GameTutorial(this);
                                     break;
                                 case 2:
                                     p_exit = true;
@@ -363,8 +366,12 @@ namespace ClientBasicClasses
                 #endregion
                 case ClientState.Start_HowTo:
                     #region MANAGE_START_HOWTO
+                    p_tutorial.Manage(i_key);
+                    //DELETE THIS LINE MAYBE
+                    if (p_tutorial != null)
+                        p_tutorial.Print();
                     break;
-                #endregion
+                    #endregion
                 case ClientState.Login:
                     #region MANAGE_LOGIN
                     switch (i_key.Key)
@@ -1454,6 +1461,997 @@ namespace ClientBasicClasses
         public void StartListeningGameSession()
         {
             GameSessionListener.StartListening(this);
+        }
+
+        public void ExitTutorial()
+        {
+            p_state = ClientState.Start;
+            p_tutorial = null;
+        }
+    }
+
+    public class GameTutorial
+    {
+        #region VARIABLES
+
+        /// <summary>
+        /// Dictionary with player name as key and current position as value
+        /// </summary>
+        private Dictionary<string, int[]> p_playerPositions;
+
+        /// <summary>
+        /// Bidimensional array with current map cells status
+        /// </summary>
+        private CellInfo[][] p_mapInfo;
+
+        private enum TutorialState
+        {
+            BasicConcepts,
+            BasicMovement,
+            BasicMovement_Example,
+            Holes,
+            Holes_Example,
+            Bombs,
+            Bombs_Example,
+            Turrets,
+            Turrets_Example,
+            SightRange,
+            SightRange_Example,
+            Blindness,
+            Blindness_Example
+        }
+
+        /// <summary>
+        /// Current GameState
+        /// </summary>
+        private TutorialState p_state;
+
+        private ClientGameManager p_gameManager;
+
+
+        private int[] p_playerPosReal;
+        private int[] p_playerPosVirt;
+
+        private ClientCellInfo[][] p_mapView;
+
+        private List<string> p_deadPlayers;
+
+        private List<int[]> p_turretList;
+
+        private bool p_turretsActive;
+
+        #endregion
+
+        /// <summary>
+        /// GameSession constructor. Initializes player lists, set maximum number of players and creates chosen map
+        /// </summary>
+        /// <param name="i_maxPlayers">Maximum number of players</param>
+        /// <param name="i_mapIndex">Chosen map index</param>
+        public GameTutorial(ClientGameManager i_gameManager)
+        {
+            p_gameManager = i_gameManager;
+            p_state = TutorialState.BasicConcepts;
+            Console.ForegroundColor = ConsoleColor.White;
+            Print();
+        }
+
+        public void Manage(ConsoleKeyInfo i_key)
+        {
+            switch (i_key.Key)
+            {
+                case ConsoleKey.UpArrow:
+                    if (p_state.Equals(TutorialState.BasicMovement_Example) || p_state.Equals(TutorialState.Holes_Example) || p_state.Equals(TutorialState.Bombs_Example) || p_state.Equals(TutorialState.Turrets_Example) || p_state.Equals(TutorialState.SightRange_Example) || p_state.Equals(TutorialState.Blindness_Example))
+                    {
+                        MovePlayer(new int[] { 0, 1 });
+                        Print();
+                        CheckPlayers();
+                        //CHECK ENEMY ALIVE
+                    }
+                    break;
+                case ConsoleKey.DownArrow:
+                    if (p_state.Equals(TutorialState.BasicMovement_Example) || p_state.Equals(TutorialState.Holes_Example) || p_state.Equals(TutorialState.Bombs_Example) || p_state.Equals(TutorialState.Turrets_Example) || p_state.Equals(TutorialState.SightRange_Example) || p_state.Equals(TutorialState.Blindness_Example))
+                    {
+                        MovePlayer(new int[] { 0, -1 });
+                        Print();
+                        CheckPlayers();
+                        //CHECK ENEMY ALIVE
+                    }
+                    break;
+                case ConsoleKey.RightArrow:
+                    if (p_state.Equals(TutorialState.BasicMovement_Example) || p_state.Equals(TutorialState.Holes_Example) || p_state.Equals(TutorialState.Bombs_Example) || p_state.Equals(TutorialState.Turrets_Example) || p_state.Equals(TutorialState.SightRange_Example) || p_state.Equals(TutorialState.Blindness_Example))
+                    {
+                        MovePlayer(new int[] { 1, 0 });
+                        Print();
+                        CheckPlayers();
+                        //CHECK ENEMY ALIVE
+                    }
+                    break;
+                case ConsoleKey.LeftArrow:
+                    if (p_state.Equals(TutorialState.BasicMovement_Example) || p_state.Equals(TutorialState.Holes_Example) || p_state.Equals(TutorialState.Bombs_Example) || p_state.Equals(TutorialState.Turrets_Example) || p_state.Equals(TutorialState.SightRange_Example) || p_state.Equals(TutorialState.Blindness_Example))
+                    {
+                        MovePlayer(new int[] { -1, 0 });
+                        Print();
+                        CheckPlayers();
+                        //CHECK ENEMY ALIVE
+                    }
+                    break;
+                case ConsoleKey.F1:
+                    if (p_state.Equals(TutorialState.BasicMovement_Example) || p_state.Equals(TutorialState.Holes_Example) || p_state.Equals(TutorialState.Bombs_Example) || p_state.Equals(TutorialState.Turrets_Example) || p_state.Equals(TutorialState.SightRange_Example))
+                    {
+                        p_state++;
+                        Print();
+                        if (p_state.Equals(TutorialState.Turrets_Example))
+                            p_turretsActive = false;
+                    }
+                    else if (p_state.Equals(TutorialState.Blindness_Example))
+                    {
+                        p_gameManager.ExitTutorial();
+                    }
+                    break;
+                case ConsoleKey.Escape:
+                    p_gameManager.ExitTutorial();
+                    break;
+                case ConsoleKey.Enter:
+                    if (p_state.Equals(TutorialState.BasicConcepts) || p_state.Equals(TutorialState.BasicMovement) || p_state.Equals(TutorialState.Holes) || p_state.Equals(TutorialState.Bombs) || p_state.Equals(TutorialState.Turrets) || p_state.Equals(TutorialState.SightRange) || p_state.Equals(TutorialState.Blindness))
+                    {
+                        p_state++;
+                        PrepareExample();
+                    }
+                    else if (p_state.Equals(TutorialState.Blindness_Example))
+                        RadarUsed();
+                    break;
+                case ConsoleKey.Spacebar:
+                    if (p_state.Equals(TutorialState.Bombs_Example) || p_state.Equals(TutorialState.Turrets_Example) || p_state.Equals(TutorialState.SightRange_Example) || p_state.Equals(TutorialState.Blindness_Example))
+                    {
+                        PlayerAttacks();
+                        Print();
+                        CheckPlayers();
+                    }
+                    break;
+            }
+        }
+
+        public void Print()
+        {
+            Console.Clear();
+            switch (p_state)
+            {
+                case TutorialState.BasicConcepts:
+                    Console.WriteLine("TUTORIAL");
+                    Console.WriteLine("--------");
+                    Console.WriteLine("Lesson 0 - Basic Concepts");
+                    Console.WriteLine("--------");
+                    Console.WriteLine("Here you have some basic concepts of the game explained.");
+                    Console.WriteLine("Each of these symbols gives information of a cell on the map:");
+                    Console.WriteLine("\t?\t->\tUnknown info.");
+                    Console.WriteLine("\tX\t->\tNavigable cell.");
+                    Console.WriteLine("\tO\t->\tHole.");
+                    Console.WriteLine("\tP\t->\tYour position.");
+                    Console.WriteLine("\tE\t->\tOther player position.");
+                    Console.WriteLine("\tB\t->\tBombhit.");
+                    Console.WriteLine("\tD\t->\tDead player.");
+                    Console.WriteLine("\tT\t->\tTurret aiming to this cell.");
+                    Console.WriteLine("\nEnter: Next lesson   Esc: Exit tutorial");
+                    break;
+                case TutorialState.BasicMovement:
+                    Console.WriteLine("TUTORIAL");
+                    Console.WriteLine("--------");
+                    Console.WriteLine("Lesson 1 - Basic Movement");
+                    Console.WriteLine("--------");
+                    Console.WriteLine("Use arrows to move around navigable cells on the map (X).");
+                    Console.WriteLine("Place yourself on the same cell that other player to kill him.");
+                    Console.WriteLine("Let's try!.");
+                    Console.WriteLine("\nEnter: Try it!   Esc: Exit tutorial");
+                    break;
+                case TutorialState.BasicMovement_Example:
+                    Console.WriteLine("TUTORIAL");
+                    Console.WriteLine("--------");
+                    Console.WriteLine("Example 1 - Basic Movement");
+                    Console.WriteLine("--------");
+                    Console.WriteLine("Kill the other player\n");
+                    PaintMap();
+                    Console.WriteLine("\nArrows: Move bot    F1: Skip example   Esc: Exit tutorial");
+                    break;
+                case TutorialState.Holes:
+                    Console.WriteLine("TUTORIAL");
+                    Console.WriteLine("--------");
+                    Console.WriteLine("Lesson 2 - Holes");
+                    Console.WriteLine("--------");
+                    Console.WriteLine("If you fall into a hole (O) you will die.");
+                    Console.WriteLine("Map limits are sorrounded by holes.");
+                    Console.WriteLine("Let's try!.");
+                    Console.WriteLine("\nEnter: Try it!   Esc: Exit tutorial");
+                    break;
+                case TutorialState.Holes_Example:
+                    Console.WriteLine("TUTORIAL");
+                    Console.WriteLine("--------");
+                    Console.WriteLine("Example 2 - Holes");
+                    Console.WriteLine("--------");
+                    Console.WriteLine("Avoid holes and kill the other player\n");
+                    PaintMap();
+                    Console.WriteLine("\nArrows: Move bot    F1: Skip example   Esc: Exit tutorial");
+                    break;
+                case TutorialState.Bombs:
+                    Console.WriteLine("TUTORIAL");
+                    Console.WriteLine("--------");
+                    Console.WriteLine("Lesson 3 - Bombs");
+                    Console.WriteLine("--------");
+                    Console.WriteLine("There's other way to kill an enemy. Dropping a bomb.");
+                    Console.WriteLine("Press SPACE to drop a bomb. Bomb will hit (B) all cells at a distance of 2 cells from player.");
+                    Console.WriteLine("During game bomb attack has a cooldown of 10 seconds.");
+                    Console.WriteLine("Let's try!.");
+                    Console.WriteLine("\nEnter: Try it!   Esc: Exit tutorial");
+                    break;
+                case TutorialState.Bombs_Example:
+                    Console.WriteLine("TUTORIAL");
+                    Console.WriteLine("--------");
+                    Console.WriteLine("Example 3 - Bombs");
+                    Console.WriteLine("--------");
+                    Console.WriteLine("Kill the other player\n");
+                    PaintMap();
+                    Console.WriteLine("\nArrows: Move bot    Space: Bomb    F1: Skip example   Esc: Exit tutorial");
+                    break;
+                case TutorialState.Turrets:
+                    Console.WriteLine("TUTORIAL");
+                    Console.WriteLine("--------");
+                    Console.WriteLine("Lesson 4 - Turrets");
+                    Console.WriteLine("--------");
+                    Console.WriteLine("Turrets can drop bombs on every cell on the map.");
+                    Console.WriteLine("Turrets start aiming to a cell (T) and after a sort time it drops the bomb.");
+                    Console.WriteLine("Let's try!.");
+                    Console.WriteLine("\nEnter: Try it!   Esc: Exit tutorial");
+                    break;
+                case TutorialState.Turrets_Example:
+                    Console.WriteLine("TUTORIAL");
+                    Console.WriteLine("--------");
+                    Console.WriteLine("Example 4 - Turrets");
+                    Console.WriteLine("--------");
+                    Console.WriteLine("Avoid turrets and kill the other player\n");
+                    PaintMap();
+                    Console.WriteLine("\nArrows: Move bot    Space: Bomb    F1: Skip example   Esc: Exit tutorial");
+                    break;
+                case TutorialState.SightRange:
+                    Console.WriteLine("TUTORIAL");
+                    Console.WriteLine("--------");
+                    Console.WriteLine("Lesson 5 - Sight range");
+                    Console.WriteLine("--------");
+                    Console.WriteLine("Your bot has a limited sight range. It can't see the whole map and only see a 5x5 cell grid.");
+                    Console.WriteLine("Your bot will be always at the center of this grid.");
+                    Console.WriteLine("Let's try!.");
+                    Console.WriteLine("\nEnter: Try it!   Esc: Exit tutorial");
+                    break;
+                case TutorialState.SightRange_Example:
+                    Console.WriteLine("TUTORIAL");
+                    Console.WriteLine("--------");
+                    Console.WriteLine("Example 5 - Sight range");
+                    Console.WriteLine("--------");
+                    Console.WriteLine("Locate and kill the other player\n");
+                    PaintMap();
+                    Console.WriteLine("\nArrows: Move bot    Space: Bomb    F1: Skip example   Esc: Exit tutorial");
+                    break;
+                case TutorialState.Blindness:
+                    Console.WriteLine("TUTORIAL");
+                    Console.WriteLine("--------");
+                    Console.WriteLine("Lesson 6 - Bot blindness and memory");
+                    Console.WriteLine("--------");
+                    Console.WriteLine("Your bot can't see anything. It only can notice bombhits (B), turret aim points (T) and players that had used the radar (E).");
+                    Console.WriteLine("In addition, your bot has a limited memory and recieved info will be deleted after a little period of time.");
+                    Console.WriteLine("Most of the time your grid will be full of unknonw info (?) but you can press ENTER to use your radar and recieve all cell info on your grid. During game radar has a cooldown of 30 seconds.");
+                    Console.WriteLine("Let's try!.");
+                    Console.WriteLine("\nEnter: Try it!   Esc: Exit tutorial");
+                    break;
+                case TutorialState.Blindness_Example:
+                    Console.WriteLine("TUTORIAL");
+                    Console.WriteLine("--------");
+                    Console.WriteLine("Example 6 - Bot blindness and memory");
+                    Console.WriteLine("--------");
+                    Console.WriteLine("Locate and kill the other player\n");
+                    PaintMap();
+                    Console.WriteLine("\nArrows: Move bot    Space: Bomb    Enter: Radar    F1: Skip example   Esc: Exit tutorial");
+                    break;
+            }
+        }
+
+        public void PaintMap()
+        {
+            for (int j = p_mapView[0].Length - 1; j >= 0; j--)
+            {
+                string res = string.Empty;
+                for (int i = 0; i < p_mapView.Length; i++)
+                {
+                    if ((p_state.Equals(TutorialState.SightRange_Example) || p_state.Equals(TutorialState.Blindness_Example)) && i == p_playerPosVirt[0] && j == p_playerPosVirt[1] && (p_mapView[p_playerPosVirt[0]][p_playerPosVirt[1]] == null || !p_mapView[p_playerPosVirt[0]][ p_playerPosVirt[1]].Equals(CellContent.Aiming)))
+                    {
+                        res += "P ";
+                    }
+                    else
+                    {
+                        switch (p_mapView[i][j].content)
+                        {
+                            case CellContent.None:
+                                res += "? ";
+                                break;
+                            case CellContent.Floor:
+                                res += "X ";
+                                break;
+                            case CellContent.Dead:
+                                res += "D ";
+                                break;
+                            case CellContent.Hit:
+                                res += "B ";
+                                break;
+                            case CellContent.Player:
+                                if (!(p_state.Equals(TutorialState.SightRange_Example) || p_state.Equals(TutorialState.Blindness_Example)) && p_playerPositions["Player"][0] == i && p_playerPositions["Player"][1] == j)
+                                    res += "P ";
+                                else
+                                    res += "E ";
+                                break;
+                            case CellContent.Hole:
+                                res += "O ";
+                                break;
+                            case CellContent.Aiming:
+                                res += "T ";
+                                break;
+                        }
+                    }
+                }
+                Console.WriteLine(res);
+            }
+        }
+
+        public void PrepareExample()
+        {
+            p_deadPlayers = new List<string>();
+            switch (p_state)
+            {
+                case TutorialState.BasicMovement_Example:
+                    #region PREPARE_BASIC_MOVEMENT_EXAMPLE
+                    p_playerPositions = new Dictionary<string, int[]>();
+                    p_mapInfo = new CellInfo[8][];
+                    for (int i = 0; i < p_mapInfo.Length; i++)
+                        p_mapInfo[i] = new CellInfo[p_mapInfo.Length];
+                    p_mapInfo[6][1] = new CellInfo("Player");
+                    p_playerPositions.Add("Player", new int[] { 6, 1 });
+                    p_mapInfo[1][6] = new CellInfo("Enemy");
+                    p_playerPositions.Add("Enemy", new int[] { 1, 6 });
+
+                    p_mapView = new ClientCellInfo[p_mapInfo.Length][];
+                    for (int i = 0; i < p_mapView.Length; i++)
+                        p_mapView[i] = new ClientCellInfo[p_mapView.Length];
+                    for (int i = 0; i < p_mapInfo.Length; i++)
+                    {
+                        for (int j = 0; j < p_mapInfo.Length; j++)
+                        {
+                            p_mapView[i][j] = new ClientCellInfo();
+                            p_mapView[i][j].content = (p_mapInfo[i][j] == null) ? CellContent.Floor : p_mapInfo[i][j].content;
+                        }
+                    }
+                    #endregion
+                    break;
+                case TutorialState.Holes_Example:
+                    #region PREPARE_HOLES_EXAMPLE
+                    p_playerPositions = new Dictionary<string, int[]>();
+                    p_mapInfo = new CellInfo[9][];
+
+                    for (int i = 0; i < p_mapInfo.Length; i++)
+                        p_mapInfo[i] = new CellInfo[p_mapInfo.Length];
+                    p_mapInfo[0][0] = new CellInfo();
+                    p_mapInfo[p_mapInfo.Length - 1][0] = new CellInfo();
+                    p_mapInfo[0][p_mapInfo.Length - 1] = new CellInfo();
+                    p_mapInfo[p_mapInfo.Length - 1][p_mapInfo.Length - 1] = new CellInfo();
+                    for (int i = 1; i < p_mapInfo.Length - 1; i++)
+                    {
+                        p_mapInfo[0][i] = new CellInfo();
+                        p_mapInfo[p_mapInfo.Length - 1][i] = new CellInfo();
+                        p_mapInfo[i][0] = new CellInfo();
+                        p_mapInfo[i][p_mapInfo.Length - 1] = new CellInfo();
+                    }
+
+                    p_mapInfo[4][2] = new CellInfo("Player");
+                    p_playerPositions.Add("Player", new int[] { 4, 2 });
+                    p_mapInfo[4][5] = new CellInfo("Enemy");
+                    p_playerPositions.Add("Enemy", new int[] { 4, 5 });
+                    p_mapInfo[3][5] = new CellInfo();
+                    p_mapInfo[3][6] = new CellInfo();
+                    p_mapInfo[4][4] = new CellInfo();
+                    p_mapInfo[5][5] = new CellInfo();
+                    p_mapInfo[5][6] = new CellInfo();
+
+                    p_mapView = new ClientCellInfo[p_mapInfo.Length][];
+                    for (int i = 0; i < p_mapView.Length; i++)
+                        p_mapView[i] = new ClientCellInfo[p_mapView.Length];
+                    for (int i = 0; i < p_mapInfo.Length; i++)
+                    {
+                        for (int j = 0; j < p_mapInfo.Length; j++)
+                        {
+                            p_mapView[i][j] = new ClientCellInfo();
+                            p_mapView[i][j].content = (p_mapInfo[i][j] == null) ? CellContent.Floor : p_mapInfo[i][j].content;
+                        }
+                    }
+                    #endregion
+                    break;
+                case TutorialState.Bombs_Example:
+                    #region PREPARE_BOMBS_EXAMPLE
+                    p_playerPositions = new Dictionary<string, int[]>();
+                    p_mapInfo = new CellInfo[9][];
+
+                    for (int i = 0; i < p_mapInfo.Length; i++)
+                        p_mapInfo[i] = new CellInfo[p_mapInfo.Length];
+                    p_mapInfo[0][0] = new CellInfo();
+                    p_mapInfo[p_mapInfo.Length - 1][0] = new CellInfo();
+                    p_mapInfo[0][p_mapInfo.Length - 1] = new CellInfo();
+                    p_mapInfo[p_mapInfo.Length - 1][p_mapInfo.Length - 1] = new CellInfo();
+                    for (int i = 1; i < p_mapInfo.Length - 1; i++)
+                    {
+                        p_mapInfo[0][i] = new CellInfo();
+                        p_mapInfo[p_mapInfo.Length - 1][i] = new CellInfo();
+                        p_mapInfo[i][0] = new CellInfo();
+                        p_mapInfo[i][p_mapInfo.Length - 1] = new CellInfo();
+                    }
+
+                    p_mapInfo[4][2] = new CellInfo("Player");
+                    p_playerPositions.Add("Player", new int[] { 4, 2 });
+                    p_mapInfo[4][5] = new CellInfo("Enemy");
+                    p_playerPositions.Add("Enemy", new int[] { 4, 5 });
+                    p_mapInfo[3][5] = new CellInfo();
+                    p_mapInfo[4][4] = new CellInfo();
+                    p_mapInfo[4][6] = new CellInfo();
+                    p_mapInfo[5][5] = new CellInfo();
+
+                    p_mapView = new ClientCellInfo[p_mapInfo.Length][];
+                    for (int i = 0; i < p_mapView.Length; i++)
+                        p_mapView[i] = new ClientCellInfo[p_mapView.Length];
+                    for (int i = 0; i < p_mapInfo.Length; i++)
+                    {
+                        for (int j = 0; j < p_mapInfo.Length; j++)
+                        {
+                            p_mapView[i][j] = new ClientCellInfo();
+                            p_mapView[i][j].content = (p_mapInfo[i][j] == null) ? CellContent.Floor : p_mapInfo[i][j].content;
+                        }
+                    }
+                    #endregion
+                    break;
+                case TutorialState.Turrets_Example:
+                    #region PREPARE_TURRETS_EXAMPLE
+                    p_playerPositions = new Dictionary<string, int[]>();
+                    p_mapInfo = new CellInfo[11][];
+
+                    for (int i = 0; i < p_mapInfo.Length; i++)
+                        p_mapInfo[i] = new CellInfo[p_mapInfo.Length];
+                    p_mapInfo[0][0] = new CellInfo();
+                    p_mapInfo[p_mapInfo.Length - 1][0] = new CellInfo();
+                    p_mapInfo[0][p_mapInfo.Length - 1] = new CellInfo();
+                    p_mapInfo[p_mapInfo.Length - 1][p_mapInfo.Length - 1] = new CellInfo();
+                    for (int i = 1; i < p_mapInfo.Length - 1; i++)
+                    {
+                        p_mapInfo[0][i] = new CellInfo();
+                        p_mapInfo[p_mapInfo.Length - 1][i] = new CellInfo();
+                        p_mapInfo[i][0] = new CellInfo();
+                        p_mapInfo[i][p_mapInfo.Length - 1] = new CellInfo();
+                    }
+
+                    p_mapInfo[1][1] = new CellInfo("Player");
+                    p_playerPositions.Add("Player", new int[] { 1, 1 });
+                    p_mapInfo[5][5] = new CellInfo("Enemy");
+                    p_playerPositions.Add("Enemy", new int[] { 5, 5 });
+
+                    p_turretList = new List<int[]>();
+                    p_turretList.Add(new int[] { 5, 2 });
+                    p_turretList.Add(new int[] { 5, 8 });
+                    p_turretList.Add(new int[] { 2, 5 });
+                    p_turretList.Add(new int[] { 8, 5 });
+
+                    PrepareTurrets();
+
+                    p_mapView = new ClientCellInfo[p_mapInfo.Length][];
+                    for (int i = 0; i < p_mapView.Length; i++)
+                        p_mapView[i] = new ClientCellInfo[p_mapView.Length];
+                    for (int i = 0; i < p_mapInfo.Length; i++)
+                    {
+                        for (int j = 0; j < p_mapInfo.Length; j++)
+                        {
+                            p_mapView[i][j] = new ClientCellInfo();
+                            p_mapView[i][j].content = (p_mapInfo[i][j] == null) ? CellContent.Floor : p_mapInfo[i][j].content;
+                        }
+                    }
+                    #endregion
+                    break;
+                case TutorialState.SightRange_Example:
+                    #region PREPARE_SIGHT_RANGE_EXAMPLE
+                    p_playerPositions = new Dictionary<string, int[]>();
+                    p_mapInfo = new CellInfo[8][];
+                    for (int i = 0; i < p_mapInfo.Length; i++)
+                        p_mapInfo[i] = new CellInfo[p_mapInfo.Length];
+
+                    p_mapInfo[6][1] = new CellInfo("Player");
+                    p_playerPositions.Add("Player", new int[] { 6, 1 });
+                    p_mapInfo[1][6] = new CellInfo("Enemy");
+                    p_playerPositions.Add("Enemy", new int[] { 1, 6 });
+
+                    p_mapInfo[1][4] = new CellInfo();
+                    p_mapInfo[2][2] = new CellInfo();
+                    p_mapInfo[2][5] = new CellInfo();
+                    p_mapInfo[3][6] = new CellInfo();
+                    p_mapInfo[4][1] = new CellInfo();
+                    p_mapInfo[5][2] = new CellInfo();
+                    p_mapInfo[5][5] = new CellInfo();
+                    p_mapInfo[6][3] = new CellInfo();
+
+                    p_mapView = new ClientCellInfo[5][];
+                    for (int i = 0; i < p_mapView.Length; i++)
+                        p_mapView[i] = new ClientCellInfo[p_mapView.Length];
+                    int[] playerPosReal = p_playerPositions["Player"];
+                    //Gets player virtual position
+                    p_playerPosVirt = new int[] { (int)Math.Truncate(p_mapView.Length / 2f), (int)Math.Truncate(p_mapView.Length / 2f) };
+                    //Covers all cells on player sight
+                    for (int i = 0; i < p_mapView.Length; i++)
+                    {
+                        for (int j = 0; j < p_mapView[0].Length; j++)
+                        {
+                            //If cell is not player cell
+                            if (i != p_playerPosVirt[0] || j != p_playerPosVirt[1])
+                            {
+                                //Gets cell real pos
+                                int[] realPos = new int[] { playerPosReal[0] - p_playerPosVirt[0] + i, playerPosReal[1] - p_playerPosVirt[1] + j };
+                                //If cell pos is out of map bounds
+                                if ((realPos[0] < 0) || (realPos[0] >= p_mapInfo.Length) || (realPos[1] < 0) || (realPos[1] >= p_mapInfo[0].Length))
+                                {
+                                    //Cell content is a hole
+                                    p_mapView[i][j] = new ClientCellInfo();
+                                    p_mapView[i][j].content = CellContent.Hole;
+                                }
+                                //otherwise
+                                else
+                                {
+                                    //If cell info is empty, cell content is Floor; cell info is copied otherwise;
+                                    p_mapView[i][j] = new ClientCellInfo();
+                                    p_mapView[i][j].content = p_mapInfo[realPos[0]][realPos[1]] == null ? CellContent.Floor : p_mapInfo[realPos[0]][realPos[1]].content;
+                                }
+                            }
+                        }
+                    }
+                    #endregion
+                    break;
+                case TutorialState.Blindness_Example:
+                    #region PREPARE_BLINDNESS_EXAMPLE
+                    p_playerPositions = new Dictionary<string, int[]>();
+                    p_mapInfo = new CellInfo[8][];
+                    for (int i = 0; i < p_mapInfo.Length; i++)
+                        p_mapInfo[i] = new CellInfo[p_mapInfo.Length];
+
+                    p_mapInfo[6][1] = new CellInfo("Player");
+                    p_playerPositions.Add("Player", new int[] { 6, 1 });
+                    p_mapInfo[1][6] = new CellInfo("Enemy");
+                    p_playerPositions.Add("Enemy", new int[] { 1, 6 });
+
+                    p_mapInfo[1][4] = new CellInfo();
+                    p_mapInfo[2][2] = new CellInfo();
+                    p_mapInfo[2][5] = new CellInfo();
+                    p_mapInfo[3][6] = new CellInfo();
+                    p_mapInfo[4][1] = new CellInfo();
+                    p_mapInfo[5][2] = new CellInfo();
+                    p_mapInfo[5][5] = new CellInfo();
+                    p_mapInfo[6][3] = new CellInfo();
+
+                    p_mapView = new ClientCellInfo[5][];
+                    for (int i = 0; i < p_mapView.Length; i++)
+                    {
+                        p_mapView[i] = new ClientCellInfo[p_mapView.Length];
+                        for (int j = 0; j < p_mapView[0].Length; j++)
+                            p_mapView[i][j] = new ClientCellInfo();
+                    }
+                    p_playerPosVirt = new int[] { (int)Math.Truncate(p_mapView.Length / 2f), (int)Math.Truncate(p_mapView.Length / 2f) };
+                    //COPY FROM CLIENT
+                    #endregion
+                    break;
+            }
+            Print();
+        }
+
+        public void MovePlayer(int[] i_dir)
+        {
+            //Gets current player position vector
+            int[] playerPos = p_playerPositions["Player"];
+            //Calculates player destination position vector
+            int[] destPos = new int[] { playerPos[0] + i_dir[0], playerPos[1] + i_dir[1] };
+            //True if player position is out of map bounds
+            bool outOfBounds = (destPos[0] < 0 || destPos[0] >= p_mapInfo.Length || destPos[1] < 0 || destPos[1] >= p_mapInfo[0].Length);
+            //Gets player destination position cell info if player is not out of bounds
+            CellInfo destPosInfo = outOfBounds ? null : p_mapInfo[destPos[0]][destPos[1]];
+            //If player is out of bounds or destination cell is a hole
+            if ((outOfBounds && (p_state.Equals(TutorialState.SightRange_Example) || p_state.Equals(TutorialState.Blindness_Example))) || (destPosInfo != null && destPosInfo.content.Equals(CellContent.Hole)))
+            {
+                //Adds player to dead players list
+                p_deadPlayers.Add("Player");
+                //Eliminates player from original cell
+                p_mapInfo[playerPos[0]][playerPos[1]] = null;
+                switch (p_state)
+                {
+                    //COPY FROM CLIENT
+                    case TutorialState.SightRange_Example:
+                        break;
+                    case TutorialState.Blindness_Example:
+                        /*
+                        p_mapView[p_playerPosVirt[0]][p_playerPosVirt[1]].content = CellContent.Floor;
+                        //DateTime time = DateTime.Now;
+                        //p_mapView[p_playerPosVirt[0]][p_playerPosVirt[1]].time = time;
+                        //p_playerPosReal[0] += i_dir[0];
+                        //p_playerPosReal[1] += i_dir[1];
+                        int iniXPos = 0;
+                        int iniYPos = 0;
+                        int finXPos = p_mapView.Length - 1;
+                        int finYPos = p_mapView[0].Length - 1;
+                        int xInc = 1;
+                        int yInc = 1;
+                        if (i_dir[0] < 0)
+                        {
+                            iniXPos = finXPos;
+                            finXPos = 0;
+                            xInc = -1;
+                        }
+                        if (i_dir[1] < 0)
+                        {
+                            iniYPos = finYPos;
+                            finYPos = 0;
+                            yInc = -1;
+                        }
+                        for (int i = iniXPos, contX = 0; contX < p_mapView.Length; i = i + xInc, contX++)
+                        {
+                            for (int j = iniYPos, contY = 0; contY < p_mapView[0].Length; j = j + yInc, contY++)
+                            {
+                                int destX = i + i_dir[0];
+                                int destY = j + i_dir[1];
+                                p_mapView[i][j] = (destX < 0 || destX > p_mapView.Length - 1 || destY < 0 || destY > p_mapView[0].Length - 1) ? new ClientCellInfo() : p_mapView[destX][destY];
+                            }
+                        }
+                        */
+                        break;
+                    default:
+                        p_mapView[playerPos[0]][playerPos[1]].content = CellContent.Floor;
+                        break;
+                }
+            }
+            else if (!outOfBounds)
+            {
+                //If destination cell has a player
+                if (destPosInfo != null && destPosInfo.content.Equals(CellContent.Player))
+                {
+                    //Adds player to dead players list
+                    p_deadPlayers.Add(destPosInfo.playerId);
+                }
+                //Moves player to destination position
+                p_mapInfo[playerPos[0] + i_dir[0]][playerPos[1] + i_dir[1]] = p_mapInfo[playerPos[0]][playerPos[1]];
+                //Eliminates player from original position
+                p_mapInfo[playerPos[0]][playerPos[1]] = null;
+                int iniXPos;
+                int iniYPos;
+                int finXPos;
+                int finYPos;
+                int xInc;
+                int yInc;
+                switch (p_state)
+                {
+                    //COPY FROM CLIENT
+                    case TutorialState.SightRange_Example:
+                        p_mapView[p_playerPosVirt[0]][p_playerPosVirt[1]] = new ClientCellInfo();
+                        p_mapView[p_playerPosVirt[0]][p_playerPosVirt[1]].content = CellContent.Floor;
+                        //DateTime time = DateTime.Now;
+                        //p_mapView[p_playerPosVirt[0]][p_playerPosVirt[1]].time = time;
+                        //p_playerPosReal[0] += i_dir[0];
+                        //p_playerPosReal[1] += i_dir[1];
+                        iniXPos = 0;
+                        iniYPos = 0;
+                        finXPos = p_mapView.Length - 1;
+                        finYPos = p_mapView[0].Length - 1;
+                        xInc = 1;
+                        yInc = 1;
+                        if (i_dir[0] < 0)
+                        {
+                            iniXPos = finXPos;
+                            finXPos = 0;
+                            xInc = -1;
+                        }
+                        if (i_dir[1] < 0)
+                        {
+                            iniYPos = finYPos;
+                            finYPos = 0;
+                            yInc = -1;
+                        }
+                        for (int i = iniXPos, contX = 0; contX < p_mapView.Length; i = i + xInc, contX++)
+                        {
+                            for (int j = iniYPos, contY = 0; contY < p_mapView[0].Length; j = j + yInc, contY++)
+                            {
+                                int destX = i + i_dir[0];
+                                int destY = j + i_dir[1];
+                                if (destX < 0 || destX > p_mapView.Length - 1 || destY < 0 || destY > p_mapView[0].Length - 1)
+                                {
+                                    p_mapView[i][j] = new ClientCellInfo();
+                                    int xFin = i - p_playerPosVirt[0] + (playerPos[0] + i_dir[0]);
+                                    int yFin = j - p_playerPosVirt[1] + (playerPos[1] + i_dir[1]);
+                                    p_mapView[i][j].content = (xFin <0 || xFin >= p_mapInfo.Length || yFin <0 || yFin >= p_mapInfo[0].Length) ? CellContent.Hole : (p_mapInfo[xFin][yFin] != null) ? p_mapInfo[xFin][yFin].content : CellContent.Floor;
+                                }
+                                else
+                                    p_mapView[i][j] = p_mapView[destX][destY];
+                            }
+                        }
+                        break;
+                    case TutorialState.Blindness_Example:
+                        DateTime time = DateTime.Now;
+                        p_mapView[p_playerPosVirt[0]][p_playerPosVirt[1]].content = CellContent.Floor;
+                        p_mapView[p_playerPosVirt[0]][p_playerPosVirt[1]].time = time;
+                        //DateTime time = DateTime.Now;
+                        //p_mapView[p_playerPosVirt[0]][p_playerPosVirt[1]].time = time;
+                        //p_playerPosReal[0] += i_dir[0];
+                        //p_playerPosReal[1] += i_dir[1];
+                        iniXPos = 0;
+                        iniYPos = 0;
+                        finXPos = p_mapView.Length - 1;
+                        finYPos = p_mapView[0].Length - 1;
+                        xInc = 1;
+                        yInc = 1;
+                        if (i_dir[0] < 0)
+                        {
+                            iniXPos = finXPos;
+                            finXPos = 0;
+                            xInc = -1;
+                        }
+                        if (i_dir[1] < 0)
+                        {
+                            iniYPos = finYPos;
+                            finYPos = 0;
+                            yInc = -1;
+                        }
+                        for (int i = iniXPos, contX = 0; contX < p_mapView.Length; i = i + xInc, contX++)
+                        {
+                            for (int j = iniYPos, contY = 0; contY < p_mapView[0].Length; j = j + yInc, contY++)
+                            {
+                                int destX = i + i_dir[0];
+                                int destY = j + i_dir[1];
+                                p_mapView[i][j] = (destX < 0 || destX > p_mapView.Length - 1 || destY < 0 || destY > p_mapView[0].Length - 1) ? new ClientCellInfo() : p_mapView[destX][destY];
+                            }
+                        }
+                        RemoveMapInfoAsync(time, 3000);
+                        break;
+                    default:
+                        p_mapView[playerPos[0] + i_dir[0]][playerPos[1] + i_dir[1]].content = CellContent.Player;
+                        p_mapView[playerPos[0]][playerPos[1]].content = CellContent.Floor;
+                        break;
+                }
+                //Removes player position register
+                p_playerPositions.Remove("Player");
+                //Adds a new player position register
+                p_playerPositions.Add("Player", new int[] { playerPos[0] + i_dir[0], playerPos[1] + i_dir[1] });
+            }
+        }
+
+        public void CheckPlayers()
+        {
+            if (p_deadPlayers.Contains("Enemy"))
+            {
+                if (p_state.Equals(TutorialState.BasicMovement_Example) || p_state.Equals(TutorialState.Holes_Example) || p_state.Equals(TutorialState.Bombs_Example) || p_state.Equals(TutorialState.Turrets_Example) || p_state.Equals(TutorialState.SightRange_Example))
+                {
+                    p_state++;
+                    Print();
+                    if (p_state.Equals(TutorialState.Turrets_Example))
+                        p_turretsActive = false;
+                }
+                else if (p_state.Equals(TutorialState.Blindness_Example))
+                {
+                    p_gameManager.ExitTutorial();
+                }
+            }
+            else if (p_deadPlayers.Contains("Player"))
+                PrepareExample();
+
+        }
+
+        public void PlayerAttacks()
+        {
+            List<int[]> hitPoints = new List<int[]>();
+            //Covers all attack positions
+            for (int i = -2; i <= 2; i++)
+            {
+                for (int j = -(2 - Math.Abs(i)); j <= 2 - Math.Abs(i); j++)
+                {
+                    //Sets hit position vector
+                    int[] hitPos = new int[] { p_playerPositions["Player"][0] + i, p_playerPositions["Player"][1] + j };
+                    //True if hit position if ot of map bounds
+                    bool outOfBounds = (hitPos[0] < 0 || hitPos[0] >= p_mapInfo.Length || hitPos[1] < 0 || hitPos[1] >= p_mapInfo[0].Length);
+                    //If hit position is not out of bounds and has a player that is not attacking player
+                    if (!outOfBounds && p_mapInfo[hitPos[0]][hitPos[1]] != null && p_mapInfo[hitPos[0]][hitPos[1]].content.Equals(CellContent.Player) && !p_mapInfo[hitPos[0]][hitPos[1]].playerId.Equals("Player"))
+                    {
+                        //Gets dead player name
+                        string deadPlayer = p_mapInfo[p_playerPositions["Player"][0] + i][p_playerPositions["Player"][1] + j].playerId;
+                        //Eliminates dead player from hit position
+                        p_mapInfo[p_playerPositions["Player"][0] + i][p_playerPositions["Player"][1] + j] = null;
+                        //Adds dead player to dead players list
+                        p_deadPlayers.Add(deadPlayer);
+                    }
+                    //Otherwise
+                    else
+                    {
+                        //Adds hit position to hit points list
+                        hitPoints.Add(hitPos);
+                    }
+                }
+            }
+            DateTime time = DateTime.Now;
+            foreach (int[] hitPoint in hitPoints)
+            {
+                if (!(p_state.Equals(TutorialState.SightRange_Example) || p_state.Equals(TutorialState.Blindness_Example)))
+                {
+                    if ((hitPoint[0] != p_playerPositions["Player"][0] || hitPoint[1] != p_playerPositions["Player"][1]) && hitPoint[0] >= 0 && hitPoint[1] >= 0 && hitPoint[0] < p_mapView.Length && hitPoint[1] < p_mapView[0].Length)
+                    {
+                        p_mapView[hitPoint[0]][hitPoint[1]] = new ClientCellInfo();
+                        p_mapView[hitPoint[0]][hitPoint[1]].content = CellContent.Hit;
+                        p_mapView[hitPoint[0]][hitPoint[1]].time = time;
+                    }
+                }
+                else
+                {
+                    int[] hitPosVirt = new int[] { hitPoint[0] - p_playerPositions["Player"][0] + p_playerPosVirt[0], hitPoint[1] - p_playerPositions["Player"][1] + p_playerPosVirt[1] };
+                    if (!(hitPosVirt[0] < 0 || hitPosVirt[0] >= p_mapView.Length || hitPosVirt[1] < 0 || hitPosVirt[1] >= p_mapView[0].Length) && (hitPosVirt[0] != p_playerPosVirt[0] || hitPosVirt[1] != p_playerPosVirt[1]))
+                    {
+                        p_mapView[hitPosVirt[0]][hitPosVirt[1]] = new ClientCellInfo();
+                        p_mapView[hitPosVirt[0]][hitPosVirt[1]].content = CellContent.Hit;
+                        p_mapView[hitPosVirt[0]][hitPosVirt[1]].time = time;
+                    }
+                }
+            }
+            RemoveMapInfoAsync(time, 3000);
+        }
+
+        public void TurretAttacks(int[] i_pos)
+        {
+            List<int[]> hitPoints = new List<int[]>();
+            //Covers all attack positions
+            for (int i = -2; i <= 2; i++)
+            {
+                for (int j = -(2 - Math.Abs(i)); j <= 2 - Math.Abs(i); j++)
+                {
+                    //Sets hit position vector
+                    int[] hitPos = new int[] { i_pos[0] + i, i_pos[1] + j };
+                    //True if hit position if ot of map bounds
+                    bool outOfBounds = (hitPos[0] < 0 || hitPos[0] >= p_mapInfo.Length || hitPos[1] < 0 || hitPos[1] >= p_mapInfo[0].Length);
+                    //If hit position is not out of bounds and has a player that is not attacking player
+                    if (!outOfBounds && p_mapInfo[hitPos[0]][hitPos[1]] != null && p_mapInfo[hitPos[0]][hitPos[1]].content.Equals(CellContent.Player))
+                    {
+                        //Gets dead player name
+                        string deadPlayer = p_mapInfo[i_pos[0] + i][i_pos[1] + j].playerId;
+                        //Eliminates dead player from hit position
+                        p_mapInfo[i_pos[0] + i][i_pos[1] + j] = null;
+                        //Adds dead player to dead players list
+                        p_deadPlayers.Add(deadPlayer);
+                    }
+                    //Otherwise
+                    else
+                    {
+                        //Adds hit position to hit points list
+                        hitPoints.Add(hitPos);
+                    }
+                }
+            }
+            DateTime time = DateTime.Now;
+            foreach (int[] hitPoint in hitPoints)
+            {
+                if (!(p_state.Equals(TutorialState.SightRange_Example) || p_state.Equals(TutorialState.Blindness_Example)))
+                {
+                    if (hitPoint[0] >= 0 && hitPoint[1] >= 0 && hitPoint[0] < p_mapView.Length && hitPoint[1] < p_mapView[0].Length)
+                    {
+                        p_mapView[hitPoint[0]][hitPoint[1]] = new ClientCellInfo();
+                        p_mapView[hitPoint[0]][hitPoint[1]].content = CellContent.Hit;
+                        p_mapView[hitPoint[0]][hitPoint[1]].time = time;
+                    }
+                }
+                else
+                {
+                    int[] hitPosVirt = new int[] { hitPoint[0] - p_playerPositions["Player"][0] + p_playerPosVirt[0], hitPoint[1] - p_playerPositions["Player"][1] + p_playerPosVirt[1] };
+                    if (!(hitPosVirt[0] < 0 || hitPosVirt[0] >= p_mapView.Length || hitPosVirt[1] < 0 || hitPosVirt[1] >= p_mapView[0].Length))
+                    {
+                        p_mapView[hitPosVirt[0]][hitPosVirt[1]] = new ClientCellInfo();
+                        p_mapView[hitPosVirt[0]][hitPosVirt[1]].content = CellContent.Hit;
+                        p_mapView[hitPosVirt[0]][hitPosVirt[1]].time = time;
+                    }
+                }
+            }
+            RemoveMapInfoAsync(time, 3000);
+        }
+
+        public void RadarUsed()
+        {
+            DateTime time = DateTime.Now;
+            int[] playerPosReal = p_playerPositions["Player"];
+            //Covers all cells on player sight
+            for (int i = 0; i < p_mapView.Length; i++)
+            {
+                for (int j = 0; j < p_mapView[0].Length; j++)
+                {
+                    //If cell is not player cell
+                    if (i != p_playerPosVirt[0] || j != p_playerPosVirt[1])
+                    {
+                        //Gets cell real pos
+                        int[] realPos = new int[] { playerPosReal[0] - p_playerPosVirt[0] + i, playerPosReal[1] - p_playerPosVirt[1] + j };
+                        //If cell pos is out of map bounds
+                        if ((realPos[0] < 0) || (realPos[0] >= p_mapInfo.Length) || (realPos[1] < 0) || (realPos[1] >= p_mapInfo[0].Length))
+                        {
+                            //Cell content is a hole
+                            p_mapView[i][j] = new ClientCellInfo();
+                            p_mapView[i][j].content = CellContent.Hole;
+                        }
+                        //otherwise
+                        else
+                        {
+                            //If cell info is empty, cell content is Floor; cell info is copied otherwise;
+                            p_mapView[i][j] = new ClientCellInfo();
+                            p_mapView[i][j].content = p_mapInfo[realPos[0]][realPos[1]] == null ? CellContent.Floor : p_mapInfo[realPos[0]][realPos[1]].content;
+                        }
+                        p_mapView[i][j].time = time;
+                    }
+                }
+            }
+            RemoveMapInfoAsync(time, 3000);
+        }
+
+        public async Task RemoveMapInfoAsync(DateTime i_time, int i_millis)
+        {
+            await Task.Delay(i_millis);
+            for(int i=0; i<p_mapView.Length; i++)
+            {
+                for(int j=0; j<p_mapView[0].Length; j++)
+                {
+                    if (p_mapView[i][j].time.Equals(i_time))
+                    {
+                        p_mapView[i][j].time = DateTime.MinValue;
+                        if (p_state.Equals(TutorialState.Blindness_Example))
+                            p_mapView[i][j].content = CellContent.None;
+                        else if (p_state.Equals(TutorialState.SightRange_Example))
+                        {
+                            //Gets cell real pos
+                            int[] realPos = new int[] { p_playerPositions["Player"][0] - p_playerPosVirt[0] + i, p_playerPositions["Player"][1] - p_playerPosVirt[1] + j };
+                            //If cell pos is out of map bounds
+                            if ((realPos[0] < 0) || (realPos[0] >= p_mapInfo.Length) || (realPos[1] < 0) || (realPos[1] >= p_mapInfo[0].Length))
+                            {
+                                p_mapView[i][j].content = CellContent.Hole;
+                            }
+                            //otherwise
+                            else
+                            {
+                                p_mapView[i][j].content = p_mapInfo[realPos[0]][realPos[1]] == null ? CellContent.Floor : p_mapInfo[realPos[0]][realPos[1]].content;
+                            }
+                        }
+                        else
+                        {
+                            p_mapView[i][j].content = (p_mapInfo[i][j] == null) ? CellContent.Floor : p_mapInfo[i][j].content;
+                        }
+                    }
+                }
+            }
+            Print();
+        }
+
+        public async Task PrepareTurrets()
+        {
+            p_turretsActive = true;
+            while (p_turretsActive)
+            {
+                for (int i = 0; i <= 3; i++)
+                {
+                    await Task.Delay(1000);
+                    DateTime time = DateTime.Now;
+                    foreach (int[] pos in p_turretList)
+                    {
+                        p_mapView[pos[0]][pos[1]].content = CellContent.Aiming;
+                        p_mapView[pos[0]][pos[1]].time = time;
+                        Print();
+                    }
+                    RemoveMapInfoAsync(time, 500);
+                }
+                await Task.Delay(1000);
+                foreach (int[] pos in p_turretList)
+                {
+                    TurretAttacks(pos);
+                }
+                Print();
+            }
         }
     }
 }

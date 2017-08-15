@@ -74,7 +74,6 @@ namespace ClientBasicClasses.Sockets
                     allDone.Reset();
 
                     // Start an asynchronous socket to listen for connections.
-                    Console.WriteLine("Waiting for a connection...");
                     listener.BeginAccept(
                         new AsyncCallback(AcceptData),
                         listener);
@@ -127,8 +126,7 @@ namespace ClientBasicClasses.Sockets
             {
                 string readString = Encoding.ASCII.GetString(
                     state.buffer, 0, bytesRead);
-
-                Console.WriteLine(readString);
+                
 
                 // There  might be more data, so store the data received so far.
                 state.sb.Append(readString);
@@ -140,8 +138,6 @@ namespace ClientBasicClasses.Sockets
                 {
                     // All the data has been read from the 
                     // client. Display it on the console.
-                    Console.WriteLine("Read {0} bytes from socket. \n Data : {1}",
-                        content.Length, content);
                     content = content.Replace("<EOF>", "");
 
                     List<string> deserialized = content.DeserializeObject<List<string>>();
@@ -161,7 +157,6 @@ namespace ClientBasicClasses.Sockets
                         }
                         else if (state.methodMessage.Equals("GameStart"))
                         {
-                            Console.WriteLine("GAME START EVENT RECIEVED");
                             p_client.StartGame(state.parameters[0].DeserializeObject<List<DictionaryEntry<string, int[]>>>().ToDictionary());
                         }
                     }
@@ -266,7 +261,7 @@ namespace ClientBasicClasses.Sockets
                     allDone.Reset();
 
                     // Start an asynchronous socket to listen for connections.
-                    Console.WriteLine("Waiting for a connection...");
+                    
                     listener.BeginAccept(
                         new AsyncCallback(AcceptData),
                         listener);
@@ -319,8 +314,7 @@ namespace ClientBasicClasses.Sockets
             {
                 string readString = Encoding.ASCII.GetString(
                     state.buffer, 0, bytesRead);
-
-                Console.WriteLine(readString);
+                
 
                 // There  might be more data, so store the data received so far.
                 state.sb.Append(readString);
@@ -332,8 +326,6 @@ namespace ClientBasicClasses.Sockets
                 {
                     // All the data has been read from the 
                     // client. Display it on the console.
-                    Console.WriteLine("Read {0} bytes from socket. \n Data : {1}",
-                        content.Length, content);
                     content = content.Replace("<EOF>", "");
 
                     List<string> deserialized = content.DeserializeObject<List<string>>();

@@ -6,63 +6,6 @@ using System.Linq;
 namespace ServerBasicClasses.GameManager
 {
     /// <summary>
-    /// Contains information of a map cell content
-    /// </summary>
-    [Serializable]
-    public class CellInfo
-    {
-        /// <summary>
-        /// Type of content
-        /// </summary>
-        private CellContent p_content;
-
-        /// <summary>
-        /// Player ID if the content is a player
-        /// </summary>
-        private string p_playerId;
-
-        /// <summary>
-        /// Getter for cell content
-        /// </summary>
-        public CellContent content
-        {
-            get
-            {
-                return p_content;
-            }
-        }
-
-        /// <summary>
-        /// Getter for player ID
-        /// </summary>
-        public string playerId
-        {
-            get
-            {
-                return p_playerId;
-            }
-        }
-
-        /// <summary>
-        /// Creates a CellInfo with a player as content
-        /// </summary>
-        /// <param name="i_playerId">ID of the player</param>
-        public CellInfo(string i_playerId)
-        {
-            p_content = CellContent.Player;
-            p_playerId = i_playerId;
-        }
-
-        /// <summary>
-        /// Creates a CellInfo with a hole as content
-        /// </summary>
-        public CellInfo()
-        {
-            p_content = CellContent.Hole;
-        }
-    }
-
-    /// <summary>
     /// Different things that can happen when player moves
     /// </summary>
     public enum MovementResultType
