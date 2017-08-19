@@ -369,7 +369,7 @@ namespace ClientBasicClasses
                     p_tutorial.Manage(i_key);
                     //DELETE THIS LINE MAYBE
                     if (p_tutorial != null)
-                        p_tutorial.Print();
+                        p_tutorial.ManagePrintTask();
                     break;
                     #endregion
                 case ClientState.Login:
@@ -1520,6 +1520,8 @@ namespace ClientBasicClasses
 
         private bool p_turretsActive;
 
+        private List<Task> p_consoleWriteTaskList;
+
         #endregion
 
         /// <summary>
@@ -1532,7 +1534,7 @@ namespace ClientBasicClasses
             p_gameManager = i_gameManager;
             p_state = TutorialState.BasicConcepts;
             Console.ForegroundColor = ConsoleColor.White;
-            Print();
+            ManagePrintTask();
         }
 
         public void Manage(ConsoleKeyInfo i_key)
@@ -1543,7 +1545,7 @@ namespace ClientBasicClasses
                     if (p_state.Equals(TutorialState.BasicMovement_Example) || p_state.Equals(TutorialState.Holes_Example) || p_state.Equals(TutorialState.Bombs_Example) || p_state.Equals(TutorialState.Turrets_Example) || p_state.Equals(TutorialState.SightRange_Example) || p_state.Equals(TutorialState.Blindness_Example))
                     {
                         MovePlayer(new int[] { 0, 1 });
-                        Print();
+                        ManagePrintTask();
                         CheckPlayers();
                         //CHECK ENEMY ALIVE
                     }
@@ -1552,7 +1554,7 @@ namespace ClientBasicClasses
                     if (p_state.Equals(TutorialState.BasicMovement_Example) || p_state.Equals(TutorialState.Holes_Example) || p_state.Equals(TutorialState.Bombs_Example) || p_state.Equals(TutorialState.Turrets_Example) || p_state.Equals(TutorialState.SightRange_Example) || p_state.Equals(TutorialState.Blindness_Example))
                     {
                         MovePlayer(new int[] { 0, -1 });
-                        Print();
+                        ManagePrintTask();
                         CheckPlayers();
                         //CHECK ENEMY ALIVE
                     }
@@ -1561,7 +1563,7 @@ namespace ClientBasicClasses
                     if (p_state.Equals(TutorialState.BasicMovement_Example) || p_state.Equals(TutorialState.Holes_Example) || p_state.Equals(TutorialState.Bombs_Example) || p_state.Equals(TutorialState.Turrets_Example) || p_state.Equals(TutorialState.SightRange_Example) || p_state.Equals(TutorialState.Blindness_Example))
                     {
                         MovePlayer(new int[] { 1, 0 });
-                        Print();
+                        ManagePrintTask();
                         CheckPlayers();
                         //CHECK ENEMY ALIVE
                     }
@@ -1570,7 +1572,7 @@ namespace ClientBasicClasses
                     if (p_state.Equals(TutorialState.BasicMovement_Example) || p_state.Equals(TutorialState.Holes_Example) || p_state.Equals(TutorialState.Bombs_Example) || p_state.Equals(TutorialState.Turrets_Example) || p_state.Equals(TutorialState.SightRange_Example) || p_state.Equals(TutorialState.Blindness_Example))
                     {
                         MovePlayer(new int[] { -1, 0 });
-                        Print();
+                        ManagePrintTask();
                         CheckPlayers();
                         //CHECK ENEMY ALIVE
                     }
@@ -1579,7 +1581,7 @@ namespace ClientBasicClasses
                     if (p_state.Equals(TutorialState.BasicMovement_Example) || p_state.Equals(TutorialState.Holes_Example) || p_state.Equals(TutorialState.Bombs_Example) || p_state.Equals(TutorialState.Turrets_Example) || p_state.Equals(TutorialState.SightRange_Example))
                     {
                         p_state++;
-                        Print();
+                        ManagePrintTask();
                         if (p_state.Equals(TutorialState.Turrets_Example))
                             p_turretsActive = false;
                     }
@@ -1604,15 +1606,28 @@ namespace ClientBasicClasses
                     if (p_state.Equals(TutorialState.Bombs_Example) || p_state.Equals(TutorialState.Turrets_Example) || p_state.Equals(TutorialState.SightRange_Example) || p_state.Equals(TutorialState.Blindness_Example))
                     {
                         PlayerAttacks();
-                        Print();
+                        ManagePrintTask();
                         CheckPlayers();
                     }
                     break;
             }
         }
 
-        public void Print()
+        public void ManagePrintTask()
         {
+            Task printTask = PrintAsync();
+            p_consoleWriteTaskList.Add(printTask);
+            Task.WaitAll(printTask);
+            p_consoleWriteTaskList.Remove(printTask);
+        }
+
+        public async Task PrintAsync()
+        {
+            if (p_consoleWriteTaskList == null)
+                p_consoleWriteTaskList = new List<Task>();
+            if (p_consoleWriteTaskList.Count != 0)
+                await p_consoleWriteTaskList[p_consoleWriteTaskList.Count - 1];
+
             Console.Clear();
             switch (p_state)
             {
@@ -1934,13 +1949,21 @@ namespace ClientBasicClasses
                     p_mapInfo[5][5] = new CellInfo("Enemy");
                     p_playerPositions.Add("Enemy", new int[] { 5, 5 });
 
+                    /*
                     p_turretList = new List<int[]>();
                     p_turretList.Add(new int[] { 5, 2 });
                     p_turretList.Add(new int[] { 5, 8 });
                     p_turretList.Add(new int[] { 2, 5 });
                     p_turretList.Add(new int[] { 8, 5 });
+                    */
 
-                    PrepareTurrets();
+                    //PrepareTurrets();
+
+
+                    PrepareTurret(new int[] { 5, 2 });
+                    PrepareTurret(new int[] { 5, 8 });
+                    PrepareTurret(new int[] { 2, 5 });
+                    PrepareTurret(new int[] { 8, 5 });
 
                     p_mapView = new ClientCellInfo[p_mapInfo.Length][];
                     for (int i = 0; i < p_mapView.Length; i++)
@@ -2044,7 +2067,7 @@ namespace ClientBasicClasses
                     #endregion
                     break;
             }
-            Print();
+            ManagePrintTask();
         }
 
         public void MovePlayer(int[] i_dir)
@@ -2230,7 +2253,7 @@ namespace ClientBasicClasses
                 if (p_state.Equals(TutorialState.BasicMovement_Example) || p_state.Equals(TutorialState.Holes_Example) || p_state.Equals(TutorialState.Bombs_Example) || p_state.Equals(TutorialState.Turrets_Example) || p_state.Equals(TutorialState.SightRange_Example))
                 {
                     p_state++;
-                    Print();
+                    ManagePrintTask();
                     if (p_state.Equals(TutorialState.Turrets_Example))
                         p_turretsActive = false;
                 }
@@ -2425,9 +2448,10 @@ namespace ClientBasicClasses
                     }
                 }
             }
-            Print();
+            ManagePrintTask();
         }
 
+        /*
         public async Task PrepareTurrets()
         {
             p_turretsActive = true;
@@ -2441,7 +2465,7 @@ namespace ClientBasicClasses
                     {
                         p_mapView[pos[0]][pos[1]].content = CellContent.Aiming;
                         p_mapView[pos[0]][pos[1]].time = time;
-                        Print();
+                        ManagePrintTask();
                     }
                     RemoveMapInfoAsync(time, 500);
                 }
@@ -2450,7 +2474,28 @@ namespace ClientBasicClasses
                 {
                     TurretAttacks(pos);
                 }
-                Print();
+                ManagePrintTask();
+            }
+        }
+        */
+
+
+        public async Task PrepareTurret(int[] i_pos)
+        {
+            while (true)
+            {
+                for (int i = 0; i <= 3; i++)
+                {
+                    await Task.Delay(1000);
+                    DateTime time = DateTime.Now;
+                    p_mapView[i_pos[0]][i_pos[1]].content = CellContent.Aiming;
+                    p_mapView[i_pos[0]][i_pos[1]].time = time;
+                    ManagePrintTask();
+                    RemoveMapInfoAsync(time, 500);
+                }
+                await Task.Delay(1000);
+                TurretAttacks(i_pos);
+                ManagePrintTask();
             }
         }
     }
