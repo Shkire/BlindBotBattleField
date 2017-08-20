@@ -7,13 +7,19 @@ namespace Client
     class Program
     {
         //const string API_URI = "http://localhost:8603/api/";
-        //const string API_URI = "http://blindbotbattlefield.westeurope.cloudapp.azure.com:8603/api/";
+        const string API_URI = "http://blindbotbattlefield.westeurope.cloudapp.azure.com:8603/api/";
 
         static void Main(string[] args)
         {
-            Console.WriteLine("Write server IP addres");
-            string API_URI = Console.ReadLine();
-            ClientGameManager gameManager = new ClientGameManager(API_URI);
+            bool isLocal = true;
+            Console.WriteLine("Write server IP address if playing local");
+            string uri = Console.ReadLine();
+            if (uri.Equals(string.Empty))
+            {
+                uri = API_URI;
+                isLocal = false;
+            }
+            ClientGameManager gameManager = new ClientGameManager(uri+":8603/api/",isLocal);
             while (!gameManager.exit)
             {
                 gameManager.Print();

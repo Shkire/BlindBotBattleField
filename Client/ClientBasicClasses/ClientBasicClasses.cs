@@ -70,6 +70,7 @@ namespace ClientBasicClasses
         private Thread p_lobbyThread;
         private Thread p_gameSessionThread;
         private object p_consoleWriteLock = new Object();
+        private bool p_isLocal;
 
         #endregion
 
@@ -101,7 +102,7 @@ namespace ClientBasicClasses
 
         #endregion
 
-        public ClientGameManager(string i_apiUri)
+        public ClientGameManager(string i_apiUri, bool i_isLocal)
         {
             p_state = ClientState.Start;
             p_exit = false;
@@ -110,6 +111,7 @@ namespace ClientBasicClasses
             p_client.BaseAddress = new Uri(i_apiUri);
             p_client.DefaultRequestHeaders.Accept.Clear();
             p_client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            p_isLocal = i_isLocal;
         }
 
         public void Print()
@@ -1354,14 +1356,30 @@ namespace ClientBasicClasses
             List<string> info = new List<string>();
             info.Add(i_actor.SerializeObject());
             info.Add(i_player.SerializeObject());
+            if (p_isLocal)
+            {
+                IPHostEntry ipHostInfo = //Dns.GetHostEntry(Dns.GetHostName());
+                Dns.Resolve(Dns.GetHostName());
+                IPAddress ipAddress = ipHostInfo.AddressList[0];
+                info.Add(ipAddress.GetAddressBytes().SerializeObject());
+            }
+            else
+            {
+                string myIp = new WebClient().DownloadString(@"http://icanhazip.com").Trim();
+                string[] addressArray = myIp.Split('.');
+                byte[] byteArray = new byte[] { Byte.Parse(addressArray[0]), Byte.Parse(addressArray[1]), Byte.Parse(addressArray[2]), Byte.Parse(addressArray[3]) };
+                info.Add(byteArray.SerializeObject());
+            }
             //string myIp = new WebClient().DownloadString(@"http://icanhazip.com").Trim();
             //string[] addressArray = myIp.Split('.');
             //byte[] byteArray = new byte[] { Byte.Parse(addressArray[0]), Byte.Parse(addressArray[1]), Byte.Parse(addressArray[2]), Byte.Parse(addressArray[3]) };
             //byte[] byteArray = new byte[] { Byte.Parse("192"), Byte.Parse("168"), Byte.Parse("1"), Byte.Parse("132") };
+            /*
             IPHostEntry ipHostInfo = //Dns.GetHostEntry(Dns.GetHostName());
                 Dns.Resolve(Dns.GetHostName());
             IPAddress ipAddress = ipHostInfo.AddressList[0];
             info.Add(ipAddress.GetAddressBytes().SerializeObject());
+            */
             HttpResponseMessage response = p_client.PostAsJsonAsync(path, info.SerializeObject()).Result;
             if (response.IsSuccessStatusCode)
             {
@@ -1512,7 +1530,7 @@ namespace ClientBasicClasses
 
         private List<string> p_deadPlayers;
 
-        private List<int[]> p_turretList;
+        private List<Task> p_turretList;
 
         private bool p_turretsActive;
 
@@ -1576,10 +1594,13 @@ namespace ClientBasicClasses
                 case ConsoleKey.F1:
                     if (p_state.Equals(TutorialState.BasicMovement_Example) || p_state.Equals(TutorialState.Holes_Example) || p_state.Equals(TutorialState.Bombs_Example) || p_state.Equals(TutorialState.Turrets_Example) || p_state.Equals(TutorialState.SightRange_Example))
                     {
+                        if (p_state.Equals(TutorialState.Turrets_Example))
+                        {
+                            p_turretsActive = false;
+                            Task.WaitAll(p_turretList.ToArray());
+                        }
                         p_state++;
                         Print();
-                        if (p_state.Equals(TutorialState.Turrets_Example))
-                            p_turretsActive = false;
                     }
                     else if (p_state.Equals(TutorialState.Blindness_Example))
                     {
@@ -1947,11 +1968,18 @@ namespace ClientBasicClasses
 
                     //PrepareTurrets();
 
+                    if (p_turretList != null)
+                    {
+                        p_turretsActive = false;
+                        Task.WaitAll(p_turretList.ToArray());
+                    }
 
-                    PrepareTurret(new int[] { 5, 2 });
-                    PrepareTurret(new int[] { 5, 8 });
-                    PrepareTurret(new int[] { 2, 5 });
-                    PrepareTurret(new int[] { 8, 5 });
+                    p_turretsActive = true;
+                    p_turretList = new List<Task>();
+                    p_turretList.Add(PrepareTurret(new int[] { 5, 2 }));
+                    p_turretList.Add(PrepareTurret(new int[] { 5, 8 }));
+                    p_turretList.Add(PrepareTurret(new int[] { 2, 5 }));
+                    p_turretList.Add(PrepareTurret(new int[] { 8, 5 }));
 
                     p_mapView = new ClientCellInfo[p_mapInfo.Length][];
                     for (int i = 0; i < p_mapView.Length; i++)
@@ -2240,10 +2268,13 @@ namespace ClientBasicClasses
             {
                 if (p_state.Equals(TutorialState.BasicMovement_Example) || p_state.Equals(TutorialState.Holes_Example) || p_state.Equals(TutorialState.Bombs_Example) || p_state.Equals(TutorialState.Turrets_Example) || p_state.Equals(TutorialState.SightRange_Example))
                 {
+                    if (p_state.Equals(TutorialState.Turrets_Example))
+                    {
+                        p_turretsActive = false;
+                        Task.WaitAll(p_turretList.ToArray());
+                    }
                     p_state++;
                     Print();
-                    if (p_state.Equals(TutorialState.Turrets_Example))
-                        p_turretsActive = false;
                 }
                 else if (p_state.Equals(TutorialState.Blindness_Example))
                 {
@@ -2470,11 +2501,13 @@ namespace ClientBasicClasses
 
         public async Task PrepareTurret(int[] i_pos)
         {
-            while (true)
+            while (p_turretsActive)
             {
                 for (int i = 0; i <= 3; i++)
                 {
                     await Task.Delay(1000);
+                    if (!p_turretsActive)
+                        break;
                     DateTime time = DateTime.Now;
                     p_mapView[i_pos[0]][i_pos[1]].content = CellContent.Aiming;
                     p_mapView[i_pos[0]][i_pos[1]].time = time;
@@ -2482,6 +2515,8 @@ namespace ClientBasicClasses
                     RemoveMapInfoAsync(time, 500);
                 }
                 await Task.Delay(1000);
+                if (!p_turretsActive)
+                    break;
                 TurretAttacks(i_pos);
                 Print();
             }
