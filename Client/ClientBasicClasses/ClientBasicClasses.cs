@@ -67,9 +67,9 @@ namespace ClientBasicClasses
         private int radarTime;
         private int attackTime;
         public string ipAdress;
-        public List<DateTime> p_consoleWriteLock;
         private Thread p_lobbyThread;
         private Thread p_gameSessionThread;
+        private object p_consoleWriteLock = new Object();
 
         #endregion
 
@@ -103,7 +103,6 @@ namespace ClientBasicClasses
 
         public ClientGameManager(string i_apiUri)
         {
-            p_consoleWriteLock = new List<DateTime>();
             p_state = ClientState.Start;
             p_exit = false;
             p_pointer = 0;
@@ -369,7 +368,7 @@ namespace ClientBasicClasses
                     p_tutorial.Manage(i_key);
                     //DELETE THIS LINE MAYBE
                     if (p_tutorial != null)
-                        p_tutorial.ManagePrintTask();
+                        p_tutorial.Print();
                     break;
                     #endregion
                 case ClientState.Login:
@@ -1214,75 +1213,72 @@ namespace ClientBasicClasses
 
         public void RefreshClient()
         {
-            DateTime time = DateTime.Now;
-            p_consoleWriteLock.Add(time);
-            while (!p_consoleWriteLock[0].Equals(time))
+            lock (p_consoleWriteLock)
             {
-            }
-            Console.Clear();
-            Console.WriteLine("Playing\n");
-            if (p_dead)
-                Console.WriteLine("--YOU'RE DEAD--");
-            else
-                Console.WriteLine("--{0}'s Bot--", playerName);
-            for (int j = p_playerSight.GetLength(1) - 1; j >= 0; j--)
-            {
-                string res = string.Empty;
-                for (int i = 0; i < p_playerSight.GetLength(0); i++)
+                Console.Clear();
+                Console.WriteLine("Playing\n");
+                if (p_dead)
+                    Console.WriteLine("--YOU'RE DEAD--");
+                else
+                    Console.WriteLine("--{0}'s Bot--", playerName);
+                for (int j = p_playerSight.GetLength(1) - 1; j >= 0; j--)
                 {
-                    if (i == p_playerPosVirt[0] && j == p_playerPosVirt[1] && !p_playerSight[p_playerPosVirt[0], p_playerPosVirt[1]].Equals(CellContent.Aiming))
+                    string res = string.Empty;
+                    for (int i = 0; i < p_playerSight.GetLength(0); i++)
                     {
-                        res += "P ";
-                    }
-                    else
-                    {
-                        switch (p_playerSight[i, j].content)
+                        if (i == p_playerPosVirt[0] && j == p_playerPosVirt[1] && !p_playerSight[p_playerPosVirt[0], p_playerPosVirt[1]].Equals(CellContent.Aiming))
                         {
-                            case CellContent.None:
-                                res += "? ";
-                                break;
-                            case CellContent.Floor:
-                                res += "X ";
-                                break;
-                            case CellContent.Dead:
-                                res += "D ";
-                                break;
-                            case CellContent.Hit:
-                                res += "B ";
-                                break;
-                            case CellContent.Player:
-                                res += "E ";
-                                break;
-                            case CellContent.Hole:
-                                res += "O ";
-                                break;
-                            case CellContent.Aiming:
-                                res += "T ";
-                                break;
+                            res += "P ";
+                        }
+                        else
+                        {
+                            switch (p_playerSight[i, j].content)
+                            {
+                                case CellContent.None:
+                                    res += "? ";
+                                    break;
+                                case CellContent.Floor:
+                                    res += "X ";
+                                    break;
+                                case CellContent.Dead:
+                                    res += "D ";
+                                    break;
+                                case CellContent.Hit:
+                                    res += "B ";
+                                    break;
+                                case CellContent.Player:
+                                    res += "E ";
+                                    break;
+                                case CellContent.Hole:
+                                    res += "O ";
+                                    break;
+                                case CellContent.Aiming:
+                                    res += "T ";
+                                    break;
+                            }
                         }
                     }
+                    Console.WriteLine(res);
                 }
-                Console.WriteLine(res);
+                Console.Write("\nArrows: Move bot    ");
+                if (attackTime > 0)
+                    Console.Write("Drop bomb: " + ((attackTime < 10) ? " " + attackTime : attackTime.ToString()) + "       ");
+                else
+                    Console.Write("Space: Drop bomb    ");
+                if (radarTime > 0)
+                    Console.Write("Radar: " + ((radarTime < 10) ? " " + radarTime : radarTime.ToString()) + "       ");
+                else
+                    Console.Write("Space: Drop bomb    ");
+                Console.WriteLine("Esc: Exit");
+                Console.WriteLine("\nGame Log:");
+                Console.WriteLine("\n------------------------------------------------------------------\n");
+                for (int i = 0; i <= 5; i++)
+                {
+                    string info = (p_gameLog != null && p_gameLog.Count > p_logPointer + i) ? p_gameLog[p_logPointer + i] : string.Empty;
+                    Console.WriteLine(info);
+                }
+                Console.WriteLine("\n------------------------------------------------------------------");
             }
-            Console.Write("\nArrows: Move bot    ");
-            if (attackTime > 0)
-                Console.Write("Drop bomb: " + ((attackTime < 10) ? " " + attackTime : attackTime.ToString()) + "       ");
-            else
-                Console.Write("Space: Drop bomb    ");
-            if (radarTime > 0)
-                Console.Write("Radar: " + ((radarTime < 10) ? " " + radarTime : radarTime.ToString()) + "       ");
-            else
-                Console.Write("Space: Drop bomb    ");
-            Console.WriteLine("Esc: Exit");
-            Console.WriteLine("\nGame Log:");
-            Console.WriteLine("\n------------------------------------------------------------------\n");
-            for (int i = 0; i <= 5; i++)
-            {
-                string info = (p_gameLog != null && p_gameLog.Count > p_logPointer + i) ? p_gameLog[p_logPointer + i] : string.Empty;
-                Console.WriteLine(info);
-            }
-            Console.WriteLine("\n------------------------------------------------------------------");
-            p_consoleWriteLock.RemoveAt(0);
         }
 
         public async Task RemoveMapInfoAsync(DateTime i_time, int i_millis)
@@ -1520,7 +1516,7 @@ namespace ClientBasicClasses
 
         private bool p_turretsActive;
 
-        private List<Task> p_consoleWriteTaskList;
+        private object p_consoleWriteLock = new object();
 
         #endregion
 
@@ -1534,7 +1530,7 @@ namespace ClientBasicClasses
             p_gameManager = i_gameManager;
             p_state = TutorialState.BasicConcepts;
             Console.ForegroundColor = ConsoleColor.White;
-            ManagePrintTask();
+            Print();
         }
 
         public void Manage(ConsoleKeyInfo i_key)
@@ -1545,7 +1541,7 @@ namespace ClientBasicClasses
                     if (p_state.Equals(TutorialState.BasicMovement_Example) || p_state.Equals(TutorialState.Holes_Example) || p_state.Equals(TutorialState.Bombs_Example) || p_state.Equals(TutorialState.Turrets_Example) || p_state.Equals(TutorialState.SightRange_Example) || p_state.Equals(TutorialState.Blindness_Example))
                     {
                         MovePlayer(new int[] { 0, 1 });
-                        ManagePrintTask();
+                        Print();
                         CheckPlayers();
                         //CHECK ENEMY ALIVE
                     }
@@ -1554,7 +1550,7 @@ namespace ClientBasicClasses
                     if (p_state.Equals(TutorialState.BasicMovement_Example) || p_state.Equals(TutorialState.Holes_Example) || p_state.Equals(TutorialState.Bombs_Example) || p_state.Equals(TutorialState.Turrets_Example) || p_state.Equals(TutorialState.SightRange_Example) || p_state.Equals(TutorialState.Blindness_Example))
                     {
                         MovePlayer(new int[] { 0, -1 });
-                        ManagePrintTask();
+                        Print();
                         CheckPlayers();
                         //CHECK ENEMY ALIVE
                     }
@@ -1563,7 +1559,7 @@ namespace ClientBasicClasses
                     if (p_state.Equals(TutorialState.BasicMovement_Example) || p_state.Equals(TutorialState.Holes_Example) || p_state.Equals(TutorialState.Bombs_Example) || p_state.Equals(TutorialState.Turrets_Example) || p_state.Equals(TutorialState.SightRange_Example) || p_state.Equals(TutorialState.Blindness_Example))
                     {
                         MovePlayer(new int[] { 1, 0 });
-                        ManagePrintTask();
+                        Print();
                         CheckPlayers();
                         //CHECK ENEMY ALIVE
                     }
@@ -1572,7 +1568,7 @@ namespace ClientBasicClasses
                     if (p_state.Equals(TutorialState.BasicMovement_Example) || p_state.Equals(TutorialState.Holes_Example) || p_state.Equals(TutorialState.Bombs_Example) || p_state.Equals(TutorialState.Turrets_Example) || p_state.Equals(TutorialState.SightRange_Example) || p_state.Equals(TutorialState.Blindness_Example))
                     {
                         MovePlayer(new int[] { -1, 0 });
-                        ManagePrintTask();
+                        Print();
                         CheckPlayers();
                         //CHECK ENEMY ALIVE
                     }
@@ -1581,7 +1577,7 @@ namespace ClientBasicClasses
                     if (p_state.Equals(TutorialState.BasicMovement_Example) || p_state.Equals(TutorialState.Holes_Example) || p_state.Equals(TutorialState.Bombs_Example) || p_state.Equals(TutorialState.Turrets_Example) || p_state.Equals(TutorialState.SightRange_Example))
                     {
                         p_state++;
-                        ManagePrintTask();
+                        Print();
                         if (p_state.Equals(TutorialState.Turrets_Example))
                             p_turretsActive = false;
                     }
@@ -1606,165 +1602,157 @@ namespace ClientBasicClasses
                     if (p_state.Equals(TutorialState.Bombs_Example) || p_state.Equals(TutorialState.Turrets_Example) || p_state.Equals(TutorialState.SightRange_Example) || p_state.Equals(TutorialState.Blindness_Example))
                     {
                         PlayerAttacks();
-                        ManagePrintTask();
+                        Print();
                         CheckPlayers();
                     }
                     break;
             }
         }
 
-        public void ManagePrintTask()
-        {
-            Task printTask = PrintAsync();
-            p_consoleWriteTaskList.Add(printTask);
-            Task.WaitAll(printTask);
-            p_consoleWriteTaskList.Remove(printTask);
-        }
 
-        public async Task PrintAsync()
-        {
-            if (p_consoleWriteTaskList == null)
-                p_consoleWriteTaskList = new List<Task>();
-            if (p_consoleWriteTaskList.Count != 0)
-                await p_consoleWriteTaskList[p_consoleWriteTaskList.Count - 1];
-
-            Console.Clear();
-            switch (p_state)
+        public void Print()
+        { 
+            lock (p_consoleWriteLock)
             {
-                case TutorialState.BasicConcepts:
-                    Console.WriteLine("TUTORIAL");
-                    Console.WriteLine("--------");
-                    Console.WriteLine("Lesson 0 - Basic Concepts");
-                    Console.WriteLine("--------");
-                    Console.WriteLine("Here you have some basic concepts of the game explained.");
-                    Console.WriteLine("Each of these symbols gives information of a cell on the map:");
-                    Console.WriteLine("\t?\t->\tUnknown info.");
-                    Console.WriteLine("\tX\t->\tNavigable cell.");
-                    Console.WriteLine("\tO\t->\tHole.");
-                    Console.WriteLine("\tP\t->\tYour position.");
-                    Console.WriteLine("\tE\t->\tOther player position.");
-                    Console.WriteLine("\tB\t->\tBombhit.");
-                    Console.WriteLine("\tD\t->\tDead player.");
-                    Console.WriteLine("\tT\t->\tTurret aiming to this cell.");
-                    Console.WriteLine("\nEnter: Next lesson   Esc: Exit tutorial");
-                    break;
-                case TutorialState.BasicMovement:
-                    Console.WriteLine("TUTORIAL");
-                    Console.WriteLine("--------");
-                    Console.WriteLine("Lesson 1 - Basic Movement");
-                    Console.WriteLine("--------");
-                    Console.WriteLine("Use arrows to move around navigable cells on the map (X).");
-                    Console.WriteLine("Place yourself on the same cell that other player to kill him.");
-                    Console.WriteLine("Let's try!.");
-                    Console.WriteLine("\nEnter: Try it!   Esc: Exit tutorial");
-                    break;
-                case TutorialState.BasicMovement_Example:
-                    Console.WriteLine("TUTORIAL");
-                    Console.WriteLine("--------");
-                    Console.WriteLine("Example 1 - Basic Movement");
-                    Console.WriteLine("--------");
-                    Console.WriteLine("Kill the other player\n");
-                    PaintMap();
-                    Console.WriteLine("\nArrows: Move bot    F1: Skip example   Esc: Exit tutorial");
-                    break;
-                case TutorialState.Holes:
-                    Console.WriteLine("TUTORIAL");
-                    Console.WriteLine("--------");
-                    Console.WriteLine("Lesson 2 - Holes");
-                    Console.WriteLine("--------");
-                    Console.WriteLine("If you fall into a hole (O) you will die.");
-                    Console.WriteLine("Map limits are sorrounded by holes.");
-                    Console.WriteLine("Let's try!.");
-                    Console.WriteLine("\nEnter: Try it!   Esc: Exit tutorial");
-                    break;
-                case TutorialState.Holes_Example:
-                    Console.WriteLine("TUTORIAL");
-                    Console.WriteLine("--------");
-                    Console.WriteLine("Example 2 - Holes");
-                    Console.WriteLine("--------");
-                    Console.WriteLine("Avoid holes and kill the other player\n");
-                    PaintMap();
-                    Console.WriteLine("\nArrows: Move bot    F1: Skip example   Esc: Exit tutorial");
-                    break;
-                case TutorialState.Bombs:
-                    Console.WriteLine("TUTORIAL");
-                    Console.WriteLine("--------");
-                    Console.WriteLine("Lesson 3 - Bombs");
-                    Console.WriteLine("--------");
-                    Console.WriteLine("There's other way to kill an enemy. Dropping a bomb.");
-                    Console.WriteLine("Press SPACE to drop a bomb. Bomb will hit (B) all cells at a distance of 2 cells from player.");
-                    Console.WriteLine("During game bomb attack has a cooldown of 10 seconds.");
-                    Console.WriteLine("Let's try!.");
-                    Console.WriteLine("\nEnter: Try it!   Esc: Exit tutorial");
-                    break;
-                case TutorialState.Bombs_Example:
-                    Console.WriteLine("TUTORIAL");
-                    Console.WriteLine("--------");
-                    Console.WriteLine("Example 3 - Bombs");
-                    Console.WriteLine("--------");
-                    Console.WriteLine("Kill the other player\n");
-                    PaintMap();
-                    Console.WriteLine("\nArrows: Move bot    Space: Bomb    F1: Skip example   Esc: Exit tutorial");
-                    break;
-                case TutorialState.Turrets:
-                    Console.WriteLine("TUTORIAL");
-                    Console.WriteLine("--------");
-                    Console.WriteLine("Lesson 4 - Turrets");
-                    Console.WriteLine("--------");
-                    Console.WriteLine("Turrets can drop bombs on every cell on the map.");
-                    Console.WriteLine("Turrets start aiming to a cell (T) and after a sort time it drops the bomb.");
-                    Console.WriteLine("Let's try!.");
-                    Console.WriteLine("\nEnter: Try it!   Esc: Exit tutorial");
-                    break;
-                case TutorialState.Turrets_Example:
-                    Console.WriteLine("TUTORIAL");
-                    Console.WriteLine("--------");
-                    Console.WriteLine("Example 4 - Turrets");
-                    Console.WriteLine("--------");
-                    Console.WriteLine("Avoid turrets and kill the other player\n");
-                    PaintMap();
-                    Console.WriteLine("\nArrows: Move bot    Space: Bomb    F1: Skip example   Esc: Exit tutorial");
-                    break;
-                case TutorialState.SightRange:
-                    Console.WriteLine("TUTORIAL");
-                    Console.WriteLine("--------");
-                    Console.WriteLine("Lesson 5 - Sight range");
-                    Console.WriteLine("--------");
-                    Console.WriteLine("Your bot has a limited sight range. It can't see the whole map and only see a 5x5 cell grid.");
-                    Console.WriteLine("Your bot will be always at the center of this grid.");
-                    Console.WriteLine("Let's try!.");
-                    Console.WriteLine("\nEnter: Try it!   Esc: Exit tutorial");
-                    break;
-                case TutorialState.SightRange_Example:
-                    Console.WriteLine("TUTORIAL");
-                    Console.WriteLine("--------");
-                    Console.WriteLine("Example 5 - Sight range");
-                    Console.WriteLine("--------");
-                    Console.WriteLine("Locate and kill the other player\n");
-                    PaintMap();
-                    Console.WriteLine("\nArrows: Move bot    Space: Bomb    F1: Skip example   Esc: Exit tutorial");
-                    break;
-                case TutorialState.Blindness:
-                    Console.WriteLine("TUTORIAL");
-                    Console.WriteLine("--------");
-                    Console.WriteLine("Lesson 6 - Bot blindness and memory");
-                    Console.WriteLine("--------");
-                    Console.WriteLine("Your bot can't see anything. It only can notice bombhits (B), turret aim points (T) and players that had used the radar (E).");
-                    Console.WriteLine("In addition, your bot has a limited memory and recieved info will be deleted after a little period of time.");
-                    Console.WriteLine("Most of the time your grid will be full of unknonw info (?) but you can press ENTER to use your radar and recieve all cell info on your grid. During game radar has a cooldown of 30 seconds.");
-                    Console.WriteLine("Let's try!.");
-                    Console.WriteLine("\nEnter: Try it!   Esc: Exit tutorial");
-                    break;
-                case TutorialState.Blindness_Example:
-                    Console.WriteLine("TUTORIAL");
-                    Console.WriteLine("--------");
-                    Console.WriteLine("Example 6 - Bot blindness and memory");
-                    Console.WriteLine("--------");
-                    Console.WriteLine("Locate and kill the other player\n");
-                    PaintMap();
-                    Console.WriteLine("\nArrows: Move bot    Space: Bomb    Enter: Radar    F1: Skip example   Esc: Exit tutorial");
-                    break;
+                Console.Clear();
+                switch (p_state)
+                {
+                    case TutorialState.BasicConcepts:
+                        Console.WriteLine("TUTORIAL");
+                        Console.WriteLine("--------");
+                        Console.WriteLine("Lesson 0 - Basic Concepts");
+                        Console.WriteLine("--------");
+                        Console.WriteLine("Here you have some basic concepts of the game explained.");
+                        Console.WriteLine("Each of these symbols gives information of a cell on the map:");
+                        Console.WriteLine("\t?\t->\tUnknown info.");
+                        Console.WriteLine("\tX\t->\tNavigable cell.");
+                        Console.WriteLine("\tO\t->\tHole.");
+                        Console.WriteLine("\tP\t->\tYour position.");
+                        Console.WriteLine("\tE\t->\tOther player position.");
+                        Console.WriteLine("\tB\t->\tBombhit.");
+                        Console.WriteLine("\tD\t->\tDead player.");
+                        Console.WriteLine("\tT\t->\tTurret aiming to this cell.");
+                        Console.WriteLine("\nEnter: Next lesson   Esc: Exit tutorial");
+                        break;
+                    case TutorialState.BasicMovement:
+                        Console.WriteLine("TUTORIAL");
+                        Console.WriteLine("--------");
+                        Console.WriteLine("Lesson 1 - Basic Movement");
+                        Console.WriteLine("--------");
+                        Console.WriteLine("Use arrows to move around navigable cells on the map (X).");
+                        Console.WriteLine("Place yourself on the same cell that other player to kill him.");
+                        Console.WriteLine("Let's try!.");
+                        Console.WriteLine("\nEnter: Try it!   Esc: Exit tutorial");
+                        break;
+                    case TutorialState.BasicMovement_Example:
+                        Console.WriteLine("TUTORIAL");
+                        Console.WriteLine("--------");
+                        Console.WriteLine("Example 1 - Basic Movement");
+                        Console.WriteLine("--------");
+                        Console.WriteLine("Kill the other player\n");
+                        PaintMap();
+                        Console.WriteLine("\nArrows: Move bot    F1: Skip example   Esc: Exit tutorial");
+                        break;
+                    case TutorialState.Holes:
+                        Console.WriteLine("TUTORIAL");
+                        Console.WriteLine("--------");
+                        Console.WriteLine("Lesson 2 - Holes");
+                        Console.WriteLine("--------");
+                        Console.WriteLine("If you fall into a hole (O) you will die.");
+                        Console.WriteLine("Map limits are sorrounded by holes.");
+                        Console.WriteLine("Let's try!.");
+                        Console.WriteLine("\nEnter: Try it!   Esc: Exit tutorial");
+                        break;
+                    case TutorialState.Holes_Example:
+                        Console.WriteLine("TUTORIAL");
+                        Console.WriteLine("--------");
+                        Console.WriteLine("Example 2 - Holes");
+                        Console.WriteLine("--------");
+                        Console.WriteLine("Avoid holes and kill the other player\n");
+                        PaintMap();
+                        Console.WriteLine("\nArrows: Move bot    F1: Skip example   Esc: Exit tutorial");
+                        break;
+                    case TutorialState.Bombs:
+                        Console.WriteLine("TUTORIAL");
+                        Console.WriteLine("--------");
+                        Console.WriteLine("Lesson 3 - Bombs");
+                        Console.WriteLine("--------");
+                        Console.WriteLine("There's other way to kill an enemy. Dropping a bomb.");
+                        Console.WriteLine("Press SPACE to drop a bomb. Bomb will hit (B) all cells at a distance of 2 cells from player.");
+                        Console.WriteLine("During game bomb attack has a cooldown of 10 seconds.");
+                        Console.WriteLine("Let's try!.");
+                        Console.WriteLine("\nEnter: Try it!   Esc: Exit tutorial");
+                        break;
+                    case TutorialState.Bombs_Example:
+                        Console.WriteLine("TUTORIAL");
+                        Console.WriteLine("--------");
+                        Console.WriteLine("Example 3 - Bombs");
+                        Console.WriteLine("--------");
+                        Console.WriteLine("Kill the other player\n");
+                        PaintMap();
+                        Console.WriteLine("\nArrows: Move bot    Space: Bomb    F1: Skip example   Esc: Exit tutorial");
+                        break;
+                    case TutorialState.Turrets:
+                        Console.WriteLine("TUTORIAL");
+                        Console.WriteLine("--------");
+                        Console.WriteLine("Lesson 4 - Turrets");
+                        Console.WriteLine("--------");
+                        Console.WriteLine("Turrets can drop bombs on every cell on the map.");
+                        Console.WriteLine("Turrets start aiming to a cell (T) and after a sort time it drops the bomb.");
+                        Console.WriteLine("Let's try!.");
+                        Console.WriteLine("\nEnter: Try it!   Esc: Exit tutorial");
+                        break;
+                    case TutorialState.Turrets_Example:
+                        Console.WriteLine("TUTORIAL");
+                        Console.WriteLine("--------");
+                        Console.WriteLine("Example 4 - Turrets");
+                        Console.WriteLine("--------");
+                        Console.WriteLine("Avoid turrets and kill the other player\n");
+                        PaintMap();
+                        Console.WriteLine("\nArrows: Move bot    Space: Bomb    F1: Skip example   Esc: Exit tutorial");
+                        break;
+                    case TutorialState.SightRange:
+                        Console.WriteLine("TUTORIAL");
+                        Console.WriteLine("--------");
+                        Console.WriteLine("Lesson 5 - Sight range");
+                        Console.WriteLine("--------");
+                        Console.WriteLine("Your bot has a limited sight range. It can't see the whole map and only see a 5x5 cell grid.");
+                        Console.WriteLine("Your bot will be always at the center of this grid.");
+                        Console.WriteLine("Let's try!.");
+                        Console.WriteLine("\nEnter: Try it!   Esc: Exit tutorial");
+                        break;
+                    case TutorialState.SightRange_Example:
+                        Console.WriteLine("TUTORIAL");
+                        Console.WriteLine("--------");
+                        Console.WriteLine("Example 5 - Sight range");
+                        Console.WriteLine("--------");
+                        Console.WriteLine("Locate and kill the other player\n");
+                        PaintMap();
+                        Console.WriteLine("\nArrows: Move bot    Space: Bomb    F1: Skip example   Esc: Exit tutorial");
+                        break;
+                    case TutorialState.Blindness:
+                        Console.WriteLine("TUTORIAL");
+                        Console.WriteLine("--------");
+                        Console.WriteLine("Lesson 6 - Bot blindness and memory");
+                        Console.WriteLine("--------");
+                        Console.WriteLine("Your bot can't see anything. It only can notice bombhits (B), turret aim points (T) and players that had used the radar (E).");
+                        Console.WriteLine("In addition, your bot has a limited memory and recieved info will be deleted after a little period of time.");
+                        Console.WriteLine("Most of the time your grid will be full of unknonw info (?) but you can press ENTER to use your radar and recieve all cell info on your grid. During game radar has a cooldown of 30 seconds.");
+                        Console.WriteLine("Let's try!.");
+                        Console.WriteLine("\nEnter: Try it!   Esc: Exit tutorial");
+                        break;
+                    case TutorialState.Blindness_Example:
+                        Console.WriteLine("TUTORIAL");
+                        Console.WriteLine("--------");
+                        Console.WriteLine("Example 6 - Bot blindness and memory");
+                        Console.WriteLine("--------");
+                        Console.WriteLine("Locate and kill the other player\n");
+                        PaintMap();
+                        Console.WriteLine("\nArrows: Move bot    Space: Bomb    Enter: Radar    F1: Skip example   Esc: Exit tutorial");
+                        break;
+                }
             }
+            
         }
 
         public void PaintMap()
@@ -2067,7 +2055,7 @@ namespace ClientBasicClasses
                     #endregion
                     break;
             }
-            ManagePrintTask();
+            Print();
         }
 
         public void MovePlayer(int[] i_dir)
@@ -2253,7 +2241,7 @@ namespace ClientBasicClasses
                 if (p_state.Equals(TutorialState.BasicMovement_Example) || p_state.Equals(TutorialState.Holes_Example) || p_state.Equals(TutorialState.Bombs_Example) || p_state.Equals(TutorialState.Turrets_Example) || p_state.Equals(TutorialState.SightRange_Example))
                 {
                     p_state++;
-                    ManagePrintTask();
+                    Print();
                     if (p_state.Equals(TutorialState.Turrets_Example))
                         p_turretsActive = false;
                 }
@@ -2448,7 +2436,7 @@ namespace ClientBasicClasses
                     }
                 }
             }
-            ManagePrintTask();
+            Print();
         }
 
         /*
@@ -2465,7 +2453,7 @@ namespace ClientBasicClasses
                     {
                         p_mapView[pos[0]][pos[1]].content = CellContent.Aiming;
                         p_mapView[pos[0]][pos[1]].time = time;
-                        ManagePrintTask();
+                        Print();
                     }
                     RemoveMapInfoAsync(time, 500);
                 }
@@ -2474,7 +2462,7 @@ namespace ClientBasicClasses
                 {
                     TurretAttacks(pos);
                 }
-                ManagePrintTask();
+                Print();
             }
         }
         */
@@ -2490,12 +2478,12 @@ namespace ClientBasicClasses
                     DateTime time = DateTime.Now;
                     p_mapView[i_pos[0]][i_pos[1]].content = CellContent.Aiming;
                     p_mapView[i_pos[0]][i_pos[1]].time = time;
-                    ManagePrintTask();
+                    Print();
                     RemoveMapInfoAsync(time, 500);
                 }
                 await Task.Delay(1000);
                 TurretAttacks(i_pos);
-                ManagePrintTask();
+                Print();
             }
         }
     }
