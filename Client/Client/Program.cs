@@ -1,4 +1,5 @@
 ﻿using ClientBasicClasses;
+using ExtensionMethods;
 using System;
 using System.Threading.Tasks;
 
@@ -23,8 +24,9 @@ namespace Client
             while (!gameManager.exit)
             {
                 gameManager.Print();
-                //Task.WaitAll(Task.Delay(500));
-                var key = Console.ReadKey();
+                Task.Delay(100).Wait();
+                ConsoleExtension.ClearKeyBuffer();
+                var key = Console.ReadKey(true);;
                 gameManager.Manage(key);
                 /*
                 if (gameManager.state.Equals(ClientState.Start))
@@ -54,7 +56,7 @@ namespace Client
                 {
                     Console.WriteLine("Game Started");
                 }
-                var key = Console.ReadKey();
+                var key = Console.ReadKey(true);;
                 switch (key.Key)
                 {
                     case ConsoleKey.UpArrow: gameManager.MovePlayer(new int[] { 0, 1 }); ;

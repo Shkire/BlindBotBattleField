@@ -1,4 +1,5 @@
 ﻿using BasicClasses.Common;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Xml.Serialization;
@@ -46,6 +47,15 @@ namespace ExtensionMethods
                 res.Add(entry.key, entry.value);
             }
             return res;
+        }
+    }
+
+    public static class ConsoleExtension
+    {
+        public static void ClearKeyBuffer()
+        {
+            while (Console.KeyAvailable)
+                Console.ReadKey(true);
         }
     }
 }

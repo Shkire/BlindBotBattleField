@@ -615,6 +615,7 @@ namespace ClientBasicClasses
                                 Exception exc = null;
                                 Console.WriteLine("Join game {0}\n", p_games[p_pointer].id);
                                 Console.WriteLine("Connecting...\n");
+                                StartListeningLobbyEvents();
                                 try
                                 {
                                     res = ConnectPlayerAsync(p_games[p_pointer].id, p_playerName);
@@ -622,6 +623,7 @@ namespace ClientBasicClasses
                                 catch (Exception e)
                                 {
                                     exc = e;
+                                    StopListeningLobbyEvents();
                                 }
                                 if (res.info)
                                 {
@@ -633,6 +635,7 @@ namespace ClientBasicClasses
                                 }
                                 else
                                 {
+                                    StopListeningLobbyEvents();
                                     if (res.exception != null)
                                         Console.WriteLine("ERROR: " + res.exception);
                                     if (exc != null)
@@ -737,6 +740,7 @@ namespace ClientBasicClasses
                                             Console.Clear();
                                             Console.WriteLine("Join game {0}\n", p_storedStringData[0]);
                                             Console.WriteLine("Connecting...\n");
+                                            StartListeningLobbyEvents();
                                             try
                                             {
                                                 res = ConnectPlayerAsync(p_storedStringData[0], p_playerName);
@@ -744,17 +748,18 @@ namespace ClientBasicClasses
                                             catch (Exception e)
                                             {
                                                 exc = e;
+                                                StopListeningLobbyEvents();
                                             }
                                             if (res.info)
                                             {
                                                 p_gameId = p_storedStringData[0];
                                                 p_state = ClientState.Lobby;
-                                                StartListeningLobbyEvents();
                                                 UpdateLobby();
                                                 p_games = null;
                                             }
                                             else
                                             {
+                                                StopListeningLobbyEvents();
                                                 if (res.exception != null)
                                                     Console.WriteLine("ERROR: " + res.exception);
                                                 if (exc != null)
@@ -927,13 +932,23 @@ namespace ClientBasicClasses
         public void StopListeningLobbyEvents()
         {
             //p_actor.UnsubscribeAsync<IGameLobbyEvents>(p_lobbyHandler);
-            p_lobbyThread.Abort();
+            try
+            {
+                p_lobbyThread.Abort();
+            }
+            catch (Exception e)
+            { }
         }
 
         public void StopListeningGameEvents()
         {
             //p_actor.UnsubscribeAsync<IGameEvents>(p_gameHandler);
-            p_gameSessionThread.Abort();
+            try
+            {
+                p_gameSessionThread.Abort();
+            }
+            catch (Exception e)
+            { }
         }
 
         public void UpdateLobby()
