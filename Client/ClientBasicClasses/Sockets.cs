@@ -62,7 +62,9 @@ namespace ClientBasicClasses.Sockets
 
             Socket listener = new Socket(AddressFamily.InterNetwork,
                     SocketType.Stream, ProtocolType.Tcp);
+            
             // Bind the socket to the local endpoint and listen for incoming connections.
+
             try
             {
 
@@ -85,7 +87,8 @@ namespace ClientBasicClasses.Sockets
             }
             catch (Exception e)
             {
-                Console.WriteLine(e.ToString());
+                //Console.WriteLine(e.ToString());
+                listener.Close();
             }
 
             Console.WriteLine("\nPress ENTER to continue...");
@@ -95,18 +98,23 @@ namespace ClientBasicClasses.Sockets
 
         public static void AcceptData(IAsyncResult ar)
         {
-            // Signal the main thread to continue.
-            allDone.Set();
+            try
+            {
+                // Signal the main thread to continue.
+                allDone.Set();
 
-            // Get the socket that handles the client request.
-            Socket listener = (Socket)ar.AsyncState;
-            Socket handler = listener.EndAccept(ar);
+                // Get the socket that handles the client request.
+                Socket listener = (Socket)ar.AsyncState;
+                Socket handler = listener.EndAccept(ar);
 
-            // Create the state object.
-            StateObject state = new StateObject();
-            state.workSocket = handler;
-            handler.BeginReceive(state.buffer, 0, StateObject.BufferSize, 0,
-                new AsyncCallback(ReadData), state);
+                // Create the state object.
+                StateObject state = new StateObject();
+                state.workSocket = handler;
+                handler.BeginReceive(state.buffer, 0, StateObject.BufferSize, 0,
+                    new AsyncCallback(ReadData), state);
+            }
+            catch (Exception e)
+            { }
         }
 
         //READ DATA
@@ -273,7 +281,8 @@ namespace ClientBasicClasses.Sockets
             }
             catch (Exception e)
             {
-                Console.WriteLine(e.ToString());
+                //Console.WriteLine(e.ToString());
+                listener.Close();
             }
 
             Console.WriteLine("\nPress ENTER to continue...");
@@ -283,18 +292,23 @@ namespace ClientBasicClasses.Sockets
 
         public static void AcceptData(IAsyncResult ar)
         {
-            // Signal the main thread to continue.
-            allDone.Set();
+            try
+            {
+                // Signal the main thread to continue.
+                allDone.Set();
 
-            // Get the socket that handles the client request.
-            Socket listener = (Socket)ar.AsyncState;
-            Socket handler = listener.EndAccept(ar);
+                // Get the socket that handles the client request.
+                Socket listener = (Socket)ar.AsyncState;
+                Socket handler = listener.EndAccept(ar);
 
-            // Create the state object.
-            StateObject state = new StateObject();
-            state.workSocket = handler;
-            handler.BeginReceive(state.buffer, 0, StateObject.BufferSize, 0,
-                new AsyncCallback(ReadData), state);
+                // Create the state object.
+                StateObject state = new StateObject();
+                state.workSocket = handler;
+                handler.BeginReceive(state.buffer, 0, StateObject.BufferSize, 0,
+                    new AsyncCallback(ReadData), state);
+            }
+            catch (Exception e)
+            { }
         }
 
         //READ DATA

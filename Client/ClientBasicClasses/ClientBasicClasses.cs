@@ -2411,6 +2411,7 @@ namespace ClientBasicClasses
                 }
             }
             RemoveMapInfoAsync(time, 3000);
+            Task.Run(() => CheckPlayers());
         }
 
         public void RadarUsed()
