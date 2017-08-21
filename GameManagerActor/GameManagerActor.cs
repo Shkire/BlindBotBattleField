@@ -158,10 +158,8 @@ namespace GameManagerActor
             await this.StateManager.SetStateAsync("gamesession", gameSession);
             ILoginService login = ServiceProxy.Create<ILoginService>(new Uri(ServiceUri.AbsoluteUri.Replace("GameManagerActorService","LoginService")));
             await login.RemovePlayerAsync(Id.ToString());
-            /*
             if (gameSession.playerCount == 0)
                 await this.RegisterReminderAsync("RemoveIfEmpty", null, TimeSpan.FromSeconds(60), TimeSpan.FromMilliseconds(-1));
-                */
         }
 
         /// <summary>
@@ -208,7 +206,7 @@ namespace GameManagerActor
                         List<string> message = new List<string>();
                         message.Add("PlayerDead");
                         message.Add(i_player.SerializeObject());
-                        message.Add(gameSession.playerList.SerializeObject());
+                        message.Add(result.playerPos.SerializeObject());
                         message.Add(DeathReason.Hole.SerializeObject());
                         foreach (string player in gameSession.playerList)
                         {
@@ -417,7 +415,7 @@ namespace GameManagerActor
                             SocketClient socket = new SocketClient();
                             socket.StartLobbyClient(gameSession.GetPlayerAddress(player), message.SerializeObject() + "<EOF>");
                         }
-                        await this.RegisterReminderAsync("TurretAim", null, TimeSpan.FromSeconds(5), TimeSpan.FromMilliseconds(-1));
+                        //await this.RegisterReminderAsync("TurretAim", null, TimeSpan.FromSeconds(5), TimeSpan.FromMilliseconds(-1));
 
                     }
                     //otherwise
@@ -433,7 +431,7 @@ namespace GameManagerActor
             if (reminderName.Equals("RemoveIfEmpty"))
             {
                 ILoginService login = ServiceProxy.Create<ILoginService>(new Uri(ServiceUri.AbsoluteUri.Replace("GameManagerActorService", "LoginService")));
-                await login.DeleteGameAsync(Id.ToString(),ServiceUri.AbsoluteUri);
+                login.DeleteGameAsync(Id.ToString(),ServiceUri.AbsoluteUri);
             }
             if (reminderName.Equals("TurretAim"))
             {

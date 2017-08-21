@@ -283,7 +283,7 @@ namespace LoginService
             try
             {
                 IActorService actor = ActorServiceProxy.Create(new Uri(i_uri),new ActorId(i_gameId));
-                await actor.DeleteActorAsync(new ActorId(i_gameId),CancellationToken.None);
+                await actor.DeleteActorAsync(new ActorId(i_gameId),new CancellationToken());
                 //Connects to the SQL Server and close when exiting
                 using (SqlConnection connection = new SqlConnection(builder.ConnectionString))
                 {
@@ -301,6 +301,7 @@ namespace LoginService
             }
             catch (Exception e)
             {
+                Console.Write(e.ToString());
             }
         }
 

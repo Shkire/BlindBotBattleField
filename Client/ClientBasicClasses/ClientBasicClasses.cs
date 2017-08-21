@@ -629,7 +629,6 @@ namespace ClientBasicClasses
                                 {
                                     p_gameId = p_games[p_pointer].id;
                                     p_state = ClientState.Lobby;
-                                    StartListeningLobbyEvents();
                                     UpdateLobby();
                                     p_games = null;
                                 }
@@ -798,8 +797,9 @@ namespace ClientBasicClasses
                     switch (i_key.Key)
                     {
                         case ConsoleKey.Escape:
-                            p_state = ClientState.GameSelection;
                             StopListeningLobbyEvents();
+                            PlayerDisconnectAsync();
+                            p_state = ClientState.GameSelection;
                             break;
                     }
                     break;
@@ -833,8 +833,9 @@ namespace ClientBasicClasses
                                 PlayerAttacks();
                             break;
                         case ConsoleKey.Escape:
-                            p_state = ClientState.GameSelection;
                             StopListeningGameEvents();
+                            PlayerDisconnectAsync();
+                            p_state = ClientState.GameSelection;
                             break;
                         case ConsoleKey.Q:
                             GameLogUp();
@@ -1401,6 +1402,15 @@ namespace ClientBasicClasses
                 res = response.Content.ReadAsAsync<ServerResponseInfo<bool, Exception>>().Result;
             }
             return res;
+        }
+
+        public void PlayerDisconnectAsync()
+        {
+            string path = "gamemanager/disconnect";
+            List<string> info = new List<string>();
+            info.Add(p_gameId.SerializeObject());
+            info.Add(playerName.SerializeObject());
+            HttpResponseMessage response = p_client.PostAsJsonAsync(path, info.SerializeObject()).Result;
         }
 
         /// <summary>

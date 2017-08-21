@@ -308,7 +308,8 @@ namespace ClientBasicClasses.Sockets
                     new AsyncCallback(ReadData), state);
             }
             catch (Exception e)
-            { }
+            {
+            }
         }
 
         //READ DATA

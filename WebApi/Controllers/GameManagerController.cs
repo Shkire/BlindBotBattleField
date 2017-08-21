@@ -23,6 +23,14 @@ namespace WebApi.Controllers
             return actor.ConnectPlayerAsync(deserialized[1].DeserializeObject<string>(),deserialized[2].DeserializeObject<byte[]>()).Result;
         }
 
+        [Route("api/gamemanager/disconnect")]
+        public void PostDisconnectPlayerAsync([FromBody] string i_info)
+        {
+            List<string> deserialized = i_info.DeserializeObject<List<string>>();
+            IGameManagerActor actor = ActorProxy.Create<IGameManagerActor>(new ActorId(deserialized[0].DeserializeObject<string>()));
+            actor.PlayerDisconnectAsync(deserialized[1].DeserializeObject<string>()).Wait();
+        }
+
         [Route("api/gamemanager/still")]
         public void PostPlayerStillConnectedAsync([FromBody] string i_info)
         {
