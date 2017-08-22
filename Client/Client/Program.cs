@@ -24,7 +24,7 @@ namespace Client
             while (!gameManager.exit)
             {
                 gameManager.Print();
-                Task.Delay(100).Wait();
+                Task.Delay(50).Wait();
                 ConsoleExtension.ClearKeyBuffer();
                 var key = Console.ReadKey(true);;
                 gameManager.Manage(key);

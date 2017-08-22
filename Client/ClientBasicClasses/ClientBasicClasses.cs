@@ -45,8 +45,8 @@ namespace ClientBasicClasses
     {
         #region VARIABLES
 
-        const int COOLDOWN_RADAR = 30;
-        const int COOLDOWN_ATTACK = 10;
+        const int COOLDOWN_RADAR = 15;
+        const int COOLDOWN_ATTACK = 5;
         private ClientState p_state;
         private GameTutorial p_tutorial;
         private int[] p_playerPosReal;
@@ -911,7 +911,7 @@ namespace ClientBasicClasses
             List<string> info = new List<string>();
             info.Add(p_gameId);
             info.Add(playerName);
-            Task.WaitAll(p_client.PostAsJsonAsync(path, info.SerializeObject()));
+            p_client.PostAsJsonAsync(path, info.SerializeObject()).Wait();
         }
 
         public void StartListeningLobbyEvents()
@@ -955,7 +955,7 @@ namespace ClientBasicClasses
         public void UpdateLobby()
         {
             string path = "gamemanager/lobby";
-            Task.WaitAll(p_client.PostAsJsonAsync(path, p_gameId));
+            p_client.PostAsJsonAsync(path, p_gameId).Wait();
         }
 
         public void StartGame(Dictionary<string, int[]> i_playerPositions)
@@ -1231,6 +1231,8 @@ namespace ClientBasicClasses
 
         public void RefreshClient()
         {
+            if (!p_state.Equals(ClientState.Game))
+                return;
             lock (p_consoleWriteLock)
             {
                 Console.Clear();
@@ -1286,7 +1288,7 @@ namespace ClientBasicClasses
                 if (radarTime > 0)
                     Console.Write("Radar: " + ((radarTime < 10) ? " " + radarTime : radarTime.ToString()) + "       ");
                 else
-                    Console.Write("Space: Drop bomb    ");
+                    Console.Write("Enter: Radar        ");
                 Console.WriteLine("Esc: Exit");
                 Console.WriteLine("\nGame Log:");
                 Console.WriteLine("\n------------------------------------------------------------------\n");
@@ -1316,22 +1318,28 @@ namespace ClientBasicClasses
         public async Task RadarCooldown()
         {
             radarTime = COOLDOWN_RADAR;
+            RefreshClient();
             while (radarTime > 0)
             {
-                RefreshClient();
                 await Task.Delay(1000);
                 radarTime--;
+                RefreshClient();
+                if (!p_state.Equals(ClientState.Game))
+                    break;
             }
         }
 
         public async Task AttackCooldown()
         {
             attackTime = COOLDOWN_ATTACK;
+            RefreshClient();
             while (attackTime > 0)
             {
-                RefreshClient();
                 await Task.Delay(1000);
                 attackTime--;
+                RefreshClient();
+                if (!p_state.Equals(ClientState.Game))
+                    break;
             }
         }
 
@@ -2307,8 +2315,17 @@ namespace ClientBasicClasses
                 }
             }
             else if (p_deadPlayers.Contains("Player"))
+            {
+                lock (p_consoleWriteLock)
+                {
+                    Console.Clear();
+                    Console.WriteLine("YOU'RE DEAD");
+                    Console.WriteLine("-----------");
+                    Console.WriteLine("Let's try it again");
+                }
+                Task.Delay(1000).Wait();
                 PrepareExample();
-
+            }
         }
 
         public void PlayerAttacks()

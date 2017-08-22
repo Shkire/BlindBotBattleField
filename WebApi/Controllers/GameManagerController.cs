@@ -36,14 +36,14 @@ namespace WebApi.Controllers
         {
             List<string> deserialized = i_info.DeserializeObject<List<string>>();
             IGameManagerActor actor = ActorProxy.Create<IGameManagerActor>(new ActorId(deserialized[0]));
-            Task.WaitAll(actor.PlayerStillConnectedAsync(deserialized[1]));
+            actor.PlayerStillConnectedAsync(deserialized[1]).Wait();
         }
 
         [Route("api/gamemanager/lobby")]
         public void PostUpdateLobbyInfoAsync([FromBody] string i_gameId)
         {
             IGameManagerActor actor = ActorProxy.Create<IGameManagerActor>(new ActorId(i_gameId));
-            Task.WaitAll(actor.UpdateLobbyInfoAsync());
+            actor.UpdateLobbyInfoAsync().Wait();
         }
 
         [Route("api/gamemanager/move")]
