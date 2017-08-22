@@ -146,7 +146,20 @@ namespace GameManagerActor
             //Gets "gamesession" from StateManagers
             GameSession gameSession = await this.StateManager.GetStateAsync<GameSession>("gamesession");
             //Removes player from game
-            gameSession.RemovePlayer(i_player);
+            int[] posWhenDisconnected = gameSession.RemovePlayer(i_player);
+            if (posWhenDisconnected != null)
+            { 
+                List<string> message = new List<string>();
+                message.Add("PlayerDead");
+                message.Add(i_player.SerializeObject());
+                message.Add(posWhenDisconnected.SerializeObject());
+                message.Add(DeathReason.Disconnect.SerializeObject());
+                foreach (string player in gameSession.playerList)
+                {
+                    SocketClient socket = new SocketClient();
+                    socket.StartGameSessionClient(gameSession.GetPlayerAddress(player), message.SerializeObject() + "<EOF>");
+                }
+            }
             //If game is in Lobby state and there's no players
             if (gameSession.state.Equals(GameState.Lobby) && gameSession.connectedPlayerCount == 0)
             {
@@ -158,7 +171,36 @@ namespace GameManagerActor
             await this.StateManager.SetStateAsync("gamesession", gameSession);
             ILoginService login = ServiceProxy.Create<ILoginService>(new Uri(ServiceUri.AbsoluteUri.Replace("GameManagerActorService","LoginService")));
             await login.RemovePlayerAsync(Id.ToString());
-            if (gameSession.playerCount == 0)
+            //If there's only one player alive
+            if (gameSession.AlivePlayers().Count == 1)
+            {
+                try
+                {
+                    await this.UnregisterReminderAsync(GetReminder("TurretAim"));
+                }
+                catch (Exception e)
+                { }
+                try
+                {
+                    await this.UnregisterReminderAsync(GetReminder("TurretShot"));
+                }
+                catch (Exception e)
+                { }
+                List<string> message = new List<string>();
+                message.Add("GameFinished");
+                message.Add(gameSession.AlivePlayers()[0].SerializeObject());
+                foreach (string player in gameSession.playerList)
+                {
+                    SocketClient socket = new SocketClient();
+                    socket.StartGameSessionClient(gameSession.GetPlayerAddress(player), message.SerializeObject() + "<EOF>");
+                }
+                string[] playerList = new string[gameSession.playerList.Count];
+                gameSession.playerList.CopyTo(playerList);
+                foreach (string player in playerList)
+                    gameSession.RemovePlayer(player);
+                InitializeGameAsync(gameSession.maxPlayers).Wait();
+            }
+            else if (gameSession.playerCount == 0)
                 await this.RegisterReminderAsync("RemoveIfEmpty", null, TimeSpan.FromSeconds(60), TimeSpan.FromMilliseconds(-1));
         }
 
@@ -232,6 +274,18 @@ namespace GameManagerActor
                     //If there's only one player alive
                     if (gameSession.AlivePlayers().Count == 1)
                     {
+                        try
+                        {
+                            await this.UnregisterReminderAsync(GetReminder("TurretAim"));
+                        }
+                        catch (Exception e)
+                        { }
+                        try
+                        {
+                            await this.UnregisterReminderAsync(GetReminder("TurretShot"));
+                        }
+                        catch (Exception e)
+                        { }
                         List<string> message = new List<string>();
                         message.Add("GameFinished");
                         message.Add(gameSession.AlivePlayers()[0].SerializeObject());
@@ -240,6 +294,11 @@ namespace GameManagerActor
                             SocketClient socket = new SocketClient();
                             socket.StartGameSessionClient(gameSession.GetPlayerAddress(player), message.SerializeObject() + "<EOF>");
                         }
+                        string[] playerList = new string[gameSession.playerList.Count];
+                        gameSession.playerList.CopyTo(playerList);
+                        foreach (string player in playerList)
+                            gameSession.RemovePlayer(player);
+                        InitializeGameAsync(gameSession.maxPlayers).Wait();
                     }
                 }
                 //Saves "gamesession" state
@@ -305,6 +364,18 @@ namespace GameManagerActor
                     //If there's only one player alive
                     if (gameSession.AlivePlayers().Count == 1)
                     {
+                        try
+                        {
+                            await this.UnregisterReminderAsync(GetReminder("TurretAim"));
+                        }
+                        catch (Exception e)
+                        { }
+                        try
+                        {
+                            await this.UnregisterReminderAsync(GetReminder("TurretShot"));
+                        }
+                        catch (Exception e)
+                        { }
                         message = new List<string>();
                         message.Add("GameFinished");
                         message.Add(gameSession.AlivePlayers()[0].SerializeObject());
@@ -313,6 +384,11 @@ namespace GameManagerActor
                             SocketClient socket = new SocketClient();
                             socket.StartGameSessionClient(gameSession.GetPlayerAddress(player), message.SerializeObject() + "<EOF>");
                         }
+                        string[] playerList = new string[gameSession.playerList.Count];
+                        gameSession.playerList.CopyTo(playerList);
+                        foreach (string player in playerList)
+                            gameSession.RemovePlayer(player);
+                        InitializeGameAsync(gameSession.maxPlayers).Wait();
                     }
                 }
             }
@@ -498,6 +574,18 @@ namespace GameManagerActor
                 //If there's only one player alive
                 if (gameSession.AlivePlayers().Count == 1)
                 {
+                    try
+                    {
+                        await this.UnregisterReminderAsync(GetReminder("TurretAim"));
+                    }
+                    catch (Exception e)
+                    { }
+                    try
+                    {
+                        await this.UnregisterReminderAsync(GetReminder("TurretShot"));
+                    }
+                    catch (Exception e)
+                    { }
                     message = new List<string>();
                     message.Add("GameFinished");
                     message.Add(gameSession.AlivePlayers()[0].SerializeObject());
@@ -506,6 +594,11 @@ namespace GameManagerActor
                         SocketClient socket = new SocketClient();
                         socket.StartGameSessionClient(gameSession.GetPlayerAddress(player), message.SerializeObject() + "<EOF>");
                     }
+                    string[] playerList = new string[gameSession.playerList.Count];
+                    gameSession.playerList.CopyTo(playerList);
+                    foreach (string player in playerList)
+                        gameSession.RemovePlayer(player);
+                    InitializeGameAsync(gameSession.maxPlayers).Wait();
                 }
                 await this.RegisterReminderAsync("TurretAim", null, TimeSpan.FromSeconds(5), TimeSpan.FromMilliseconds(-1));
             }

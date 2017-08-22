@@ -134,6 +134,14 @@ namespace ServerBasicClasses.GameManager
         /// </summary>
         private int p_maxPlayers = 2;
 
+        public int maxPlayers
+        {
+            get
+            {
+                return p_maxPlayers;
+            }
+        }
+
         /// <summary>
         /// Dictionary with player name as key and current position as value
         /// </summary>
@@ -1025,21 +1033,30 @@ namespace ServerBasicClasses.GameManager
         /// Removes player from game
         /// </summary>
         /// <param name="i_player">Player to remove</param>
-        public void RemovePlayer(string i_player)
+        public int[] RemovePlayer(string i_player)
         {
+            int[] pos = null;
+
+            p_playerAddresses.Remove(i_player);
+            
             //Removes player from list of players that still playing
             p_connectedPlayers.Remove(i_player);
 
             p_playerAddresses.Remove(i_player);
 
             //If game state is Lobby
-            if (state.Equals(GameState.Lobby))
-                //Removes player from player list
-                p_playerList.Remove(i_player);
+            //!!!!!!!!!!!!!!!!!!!if (state.Equals(GameState.Lobby))
+            //Removes player from player list
+            p_playerList.Remove(i_player);
             //Else if player wasn't dead
-            else if (!p_deadPlayers.Contains(i_player))
+            //!!!!!!!!!else 
+            if (!p_deadPlayers.Contains(i_player))
+            {
+                pos = p_playerPositions[i_player];
                 //Adds player to dead players list
                 p_deadPlayers.Add(i_player);
+            }
+            return pos;
         }
 
         /// <summary>
@@ -1092,6 +1109,7 @@ namespace ServerBasicClasses.GameManager
                     }
                 }
                 while (!success);
+                state = GameState.Game;
             }
         }
 
