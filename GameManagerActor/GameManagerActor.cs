@@ -197,7 +197,11 @@ namespace GameManagerActor
                 string[] playerList = new string[gameSession.playerList.Count];
                 gameSession.playerList.CopyTo(playerList);
                 foreach (string player in playerList)
+                {
                     gameSession.RemovePlayer(player);
+                    login = ServiceProxy.Create<ILoginService>(new Uri(ServiceUri.AbsoluteUri.Replace("GameManagerActorService", "LoginService")));
+                    await login.RemovePlayerAsync(Id.ToString());
+                }
                 InitializeGameAsync(gameSession.maxPlayers).Wait();
             }
             else if (gameSession.playerCount == 0)
@@ -297,7 +301,11 @@ namespace GameManagerActor
                         string[] playerList = new string[gameSession.playerList.Count];
                         gameSession.playerList.CopyTo(playerList);
                         foreach (string player in playerList)
+                        {
                             gameSession.RemovePlayer(player);
+                            ILoginService login = ServiceProxy.Create<ILoginService>(new Uri(ServiceUri.AbsoluteUri.Replace("GameManagerActorService", "LoginService")));
+                            await login.RemovePlayerAsync(Id.ToString());
+                        }
                         InitializeGameAsync(gameSession.maxPlayers).Wait();
                     }
                 }
@@ -387,7 +395,11 @@ namespace GameManagerActor
                         string[] playerList = new string[gameSession.playerList.Count];
                         gameSession.playerList.CopyTo(playerList);
                         foreach (string player in playerList)
+                        {
                             gameSession.RemovePlayer(player);
+                            ILoginService login = ServiceProxy.Create<ILoginService>(new Uri(ServiceUri.AbsoluteUri.Replace("GameManagerActorService", "LoginService")));
+                            await login.RemovePlayerAsync(Id.ToString());
+                        }
                         InitializeGameAsync(gameSession.maxPlayers).Wait();
                     }
                 }
@@ -597,7 +609,11 @@ namespace GameManagerActor
                     string[] playerList = new string[gameSession.playerList.Count];
                     gameSession.playerList.CopyTo(playerList);
                     foreach (string player in playerList)
+                    {
                         gameSession.RemovePlayer(player);
+                        ILoginService login = ServiceProxy.Create<ILoginService>(new Uri(ServiceUri.AbsoluteUri.Replace("GameManagerActorService", "LoginService")));
+                        await login.RemovePlayerAsync(Id.ToString());
+                    }
                     InitializeGameAsync(gameSession.maxPlayers).Wait();
                 }
                 await this.RegisterReminderAsync("TurretAim", null, TimeSpan.FromSeconds(5), TimeSpan.FromMilliseconds(-1));
