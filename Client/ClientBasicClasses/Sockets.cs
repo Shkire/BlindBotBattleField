@@ -91,9 +91,6 @@ namespace ClientBasicClasses.Sockets
                 listener.Close();
             }
 
-            Console.WriteLine("\nPress ENTER to continue...");
-            Console.Read();
-
         }
 
         public static void AcceptData(IAsyncResult ar)
@@ -284,9 +281,6 @@ namespace ClientBasicClasses.Sockets
                 //Console.WriteLine(e.ToString());
                 listener.Close();
             }
-
-            Console.WriteLine("\nPress ENTER to continue...");
-            Console.Read();
 
         }
 

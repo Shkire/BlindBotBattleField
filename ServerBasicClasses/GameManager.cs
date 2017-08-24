@@ -1050,7 +1050,7 @@ namespace ServerBasicClasses.GameManager
             p_playerList.Remove(i_player);
             //Else if player wasn't dead
             //!!!!!!!!!else 
-            if (!p_deadPlayers.Contains(i_player))
+            if (!state.Equals(GameState.Lobby) && !p_deadPlayers.Contains(i_player))
             {
                 pos = p_playerPositions[i_player];
                 //Adds player to dead players list

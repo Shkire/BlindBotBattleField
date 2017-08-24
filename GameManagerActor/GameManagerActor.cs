@@ -39,6 +39,7 @@ namespace GameManagerActor
         /// <param name="i_maxPlayers">Chosen map index</param>
         public async Task InitializeGameAsync(int i_maxPlayers)
         {
+            //await this.StateManager.TryRemoveStateAsync("gamesession");
             //Creates GameSession
             GameSession gameSession = new GameSession(i_maxPlayers);
             //Saves GameSession as "gamesession" state
@@ -167,10 +168,10 @@ namespace GameManagerActor
                 IActorReminder reminder = GetReminder("LobbyCheck");
                 await UnregisterReminderAsync(reminder);
             }
-            //Saves "gamesession" state
-            await this.StateManager.SetStateAsync("gamesession", gameSession);
             ILoginService login = ServiceProxy.Create<ILoginService>(new Uri(ServiceUri.AbsoluteUri.Replace("GameManagerActorService","LoginService")));
             await login.RemovePlayerAsync(Id.ToString());
+            //Saves "gamesession" state
+            await this.StateManager.SetStateAsync("gamesession", gameSession);
             //If there's only one player alive
             if (gameSession.AlivePlayers().Count == 1)
             {
@@ -242,6 +243,8 @@ namespace GameManagerActor
                 if (result.type.Equals(MovementResultType.PlayerNotConnected))
                 {
                     response.info = false;
+                    //Saves "gamesession" state
+                    await this.StateManager.SetStateAsync("gamesession", gameSession);
                 }
                 //If something happened
                 else if (!result.type.Equals(MovementResultType.Nothing))
@@ -308,9 +311,12 @@ namespace GameManagerActor
                         }
                         InitializeGameAsync(gameSession.maxPlayers).Wait();
                     }
+                    else
+                    {
+                        //Saves "gamesession" state
+                        await this.StateManager.SetStateAsync("gamesession", gameSession);
+                    }
                 }
-                //Saves "gamesession" state
-                await this.StateManager.SetStateAsync("gamesession", gameSession);
             }
             catch(Exception e)
             {
@@ -503,7 +509,7 @@ namespace GameManagerActor
                             SocketClient socket = new SocketClient();
                             socket.StartLobbyClient(gameSession.GetPlayerAddress(player), message.SerializeObject() + "<EOF>");
                         }
-                        //await this.RegisterReminderAsync("TurretAim", null, TimeSpan.FromSeconds(5), TimeSpan.FromMilliseconds(-1));
+                        await this.RegisterReminderAsync("TurretAim", null, TimeSpan.FromSeconds(5), TimeSpan.FromMilliseconds(-1));
 
                     }
                     //otherwise

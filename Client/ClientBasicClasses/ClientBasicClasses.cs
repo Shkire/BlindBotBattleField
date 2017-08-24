@@ -116,6 +116,7 @@ namespace ClientBasicClasses
 
         public void Print()
         {
+            Console.BackgroundColor = ConsoleColor.Black;
             Console.ForegroundColor = ConsoleColor.White;
             Console.CursorVisible = false;
             switch (p_state)
@@ -1235,6 +1236,8 @@ namespace ClientBasicClasses
                 return;
             lock (p_consoleWriteLock)
             {
+                //Console.BackgroundColor = ConsoleColor.DarkGreen;
+                //Console.ForegroundColor = ConsoleColor.DarkGray;
                 Console.Clear();
                 Console.WriteLine("Playing\n");
                 if (p_dead)
