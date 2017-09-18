@@ -1,0 +1,5 @@
+C:\Users\danie\Documents\GitHub\BlindBotBattleField\BasicClasses\bin\Debug\BasicClasses.dll
+C:\Users\danie\Documents\GitHub\BlindBotBattleField\BasicClasses\bin\Debug\BasicClasses.pdb
+C:\Users\danie\Documents\GitHub\BlindBotBattleField\BasicClasses\obj\Debug\BasicClasses.dll
+C:\Users\danie\Documents\GitHub\BlindBotBattleField\BasicClasses\obj\Debug\BasicClasses.pdb
+C:\Users\danie\Documents\GitHub\BlindBotBattleField\BasicClasses\obj\Debug\BasicClasses.csprojResolveAssemblyReference.cache

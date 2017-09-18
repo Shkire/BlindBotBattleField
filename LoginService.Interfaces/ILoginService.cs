@@ -1,10 +1,10 @@
-﻿using LoginService.Interfaces.BasicClasses;
-using Microsoft.ServiceFabric.Services.Remoting;
+﻿using Microsoft.ServiceFabric.Services.Remoting;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using ServerResponse;
 using System.Data.SqlClient;
 using System;
+using BasicClasses.Common;
+using BasicClasses.LoginService;
 
 namespace LoginService.Interfaces
 {

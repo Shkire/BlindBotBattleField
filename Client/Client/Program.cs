@@ -1,4 +1,5 @@
-﻿using Client.BasicClasses;
+﻿using ClientBasicClasses;
+using ExtensionMethods;
 using System;
 using System.Threading.Tasks;
 
@@ -6,21 +7,26 @@ namespace Client
 {
     class Program
     {
-        const string APP_NAME = "fabric:/BlindBotBattleField";
-        const string LOGIN_SERVICE = "/LoginService";
+        //const string API_URI = "http://localhost:8603/api/";
+        const string API_URI = "http://blindbotbattlefield.westeurope.cloudapp.azure.com:8603/api/";
 
         static void Main(string[] args)
         {
-            ClientGameManager gameManager = new ClientGameManager(APP_NAME, LOGIN_SERVICE);
-            Console.WriteLine("Server adress:");
-            gameManager.ipAdress = Console.ReadLine();
-            if (gameManager.ipAdress.Equals(string.Empty))
-                gameManager.ipAdress = "fabric:/";
+            bool isLocal = true;
+            Console.WriteLine("Write server IP address if playing local");
+            string uri = Console.ReadLine();
+            if (uri.Equals(string.Empty))
+            {
+                uri = API_URI;
+                isLocal = false;
+            }
+            ClientGameManager gameManager = new ClientGameManager(uri+":8603/api/",isLocal);
             while (!gameManager.exit)
             {
                 gameManager.Print();
-                //Task.WaitAll(Task.Delay(500));
-                var key = Console.ReadKey();
+                Task.Delay(50).Wait();
+                ConsoleExtension.ClearKeyBuffer();
+                var key = Console.ReadKey(true);;
                 gameManager.Manage(key);
                 /*
                 if (gameManager.state.Equals(ClientState.Start))
@@ -50,7 +56,7 @@ namespace Client
                 {
                     Console.WriteLine("Game Started");
                 }
-                var key = Console.ReadKey();
+                var key = Console.ReadKey(true);;
                 switch (key.Key)
                 {
                     case ConsoleKey.UpArrow: gameManager.MovePlayer(new int[] { 0, 1 }); ;

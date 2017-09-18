@@ -1,0 +1,13 @@
+C:\Users\danie\Documents\GitHub\BlindBotBattleField\Client\ClientBasicClasses\obj\Debug\ClientBasicClasses.csprojResolveAssemblyReference.cache
+C:\Users\danie\Documents\GitHub\BlindBotBattleField\Client\ClientBasicClasses\bin\Debug\ClientBasicClasses.dll
+C:\Users\danie\Documents\GitHub\BlindBotBattleField\Client\ClientBasicClasses\bin\Debug\ClientBasicClasses.pdb
+C:\Users\danie\Documents\GitHub\BlindBotBattleField\Client\ClientBasicClasses\bin\Debug\BasicClasses.dll
+C:\Users\danie\Documents\GitHub\BlindBotBattleField\Client\ClientBasicClasses\bin\Debug\ExtensionMethods.dll
+C:\Users\danie\Documents\GitHub\BlindBotBattleField\Client\ClientBasicClasses\bin\Debug\Newtonsoft.Json.dll
+C:\Users\danie\Documents\GitHub\BlindBotBattleField\Client\ClientBasicClasses\bin\Debug\System.Net.Http.Formatting.dll
+C:\Users\danie\Documents\GitHub\BlindBotBattleField\Client\ClientBasicClasses\bin\Debug\BasicClasses.pdb
+C:\Users\danie\Documents\GitHub\BlindBotBattleField\Client\ClientBasicClasses\bin\Debug\ExtensionMethods.pdb
+C:\Users\danie\Documents\GitHub\BlindBotBattleField\Client\ClientBasicClasses\bin\Debug\Newtonsoft.Json.xml
+C:\Users\danie\Documents\GitHub\BlindBotBattleField\Client\ClientBasicClasses\bin\Debug\System.Net.Http.Formatting.xml
+C:\Users\danie\Documents\GitHub\BlindBotBattleField\Client\ClientBasicClasses\obj\Debug\ClientBasicClasses.dll
+C:\Users\danie\Documents\GitHub\BlindBotBattleField\Client\ClientBasicClasses\obj\Debug\ClientBasicClasses.pdb

@@ -1,16 +1,15 @@
 ﻿using System.Threading.Tasks;
 using Microsoft.ServiceFabric.Actors;
-using GameManagerActor.Interfaces.EventHandlers;
-using GameManagerActor.Interfaces.BasicClasses;
-using ServerResponse;
 using System;
+using BasicClasses.Common;
+using BasicClasses.GameManager;
 
 namespace GameManagerActor.Interfaces
 {
     /// <summary>
     /// GameManagerActor service method declaration. Allows comunication with actor service from client or other services
     /// </summary>
-    public interface IGameManagerActor : IActor, IActorEventPublisher<IGameLobbyEvents>, IActorEventPublisher<IGameEvents>
+    public interface IGameManagerActor : IActor
     {
         /// <summary>
         /// Initializes the GameSession object
@@ -24,7 +23,7 @@ namespace GameManagerActor.Interfaces
         /// </summary>
         /// <param name="i_player">Player name</param>
         /// <returns>True if player could be connected, false if game is full or started and false with exception if game was removed (or other reasons for exception throw)</returns>
-        Task<ServerResponseInfo<bool,Exception>> ConnectPlayerAsync(string i_player);
+        Task<ServerResponseInfo<bool,Exception>> ConnectPlayerAsync(string i_player, byte[] i_address);
 
         /// <summary>
         /// Send ActorEvent with lobby info to clients

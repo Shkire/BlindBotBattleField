@@ -10,9 +10,9 @@ using Microsoft.ServiceFabric.Services.Remoting.Runtime;
 using GameManagerActor.Interfaces;
 using Microsoft.ServiceFabric.Actors.Client;
 using Microsoft.ServiceFabric.Actors;
-using LoginService.Interfaces.BasicClasses;
-using ServerResponse;
 using System.Threading;
+using BasicClasses.Common;
+using BasicClasses.LoginService;
 
 namespace LoginService
 {
@@ -60,7 +60,7 @@ namespace LoginService
                     //Opens SQL connection
                     connection.Open();
                     //Creates query string
-                    string query = "SELECT Pass FROM Players WHERE Pass = '" + i_player + "'";
+                    string query = "SELECT Pass FROM Players WHERE Player = '" + i_player + "'";
                     //Creates SQL Command using query and connection
                     using (SqlCommand command = new SqlCommand(query, connection))
                     {
@@ -283,7 +283,7 @@ namespace LoginService
             try
             {
                 IActorService actor = ActorServiceProxy.Create(new Uri(i_uri),new ActorId(i_gameId));
-                await actor.DeleteActorAsync(new ActorId(i_gameId),CancellationToken.None);
+                await actor.DeleteActorAsync(new ActorId(i_gameId),new CancellationToken());
                 //Connects to the SQL Server and close when exiting
                 using (SqlConnection connection = new SqlConnection(builder.ConnectionString))
                 {
@@ -301,6 +301,7 @@ namespace LoginService
             }
             catch (Exception e)
             {
+                Console.Write(e.ToString());
             }
         }
 
