@@ -1236,7 +1236,7 @@ namespace ClientBasicClasses
                 return;
             lock (p_consoleWriteLock)
             {
-                //Console.BackgroundColor = ConsoleColor.DarkGreen;
+                
                 //Console.ForegroundColor = ConsoleColor.DarkGray;
                 Console.Clear();
                 Console.WriteLine("Playing\n");
@@ -1246,43 +1246,68 @@ namespace ClientBasicClasses
                     Console.WriteLine("--{0}'s Bot--", playerName);
                 for (int j = p_playerSight.GetLength(1) - 1; j >= 0; j--)
                 {
-                    string res = string.Empty;
+                    //string res = string.Empty;
                     for (int i = 0; i < p_playerSight.GetLength(0); i++)
                     {
+                        Console.ForegroundColor = ConsoleColor.White;
+                        if ((i+j)%2==1)
+                            Console.BackgroundColor = ConsoleColor.DarkGreen;
+                        else
+                            Console.BackgroundColor = ConsoleColor.DarkCyan;
                         if (i == p_playerPosVirt[0] && j == p_playerPosVirt[1] && !p_playerSight[p_playerPosVirt[0], p_playerPosVirt[1]].Equals(CellContent.Aiming))
                         {
-                            res += "P ";
+                            //res += "P ";
+                            Console.ForegroundColor = ConsoleColor.Black;
+                            Console.Write("P ");
                         }
                         else
                         {
                             switch (p_playerSight[i, j].content)
                             {
                                 case CellContent.None:
-                                    res += "? ";
+                                    //res += "? ";
+                                    Console.Write("? ");
                                     break;
                                 case CellContent.Floor:
-                                    res += "X ";
+                                    //res += "X ";
+                                    Console.ForegroundColor = ConsoleColor.DarkBlue;
+                                    Console.Write("X ");
                                     break;
                                 case CellContent.Dead:
-                                    res += "D ";
+                                    //res += "D ";
+                                    Console.ForegroundColor = ConsoleColor.Black;
+                                    Console.Write("D ");
                                     break;
                                 case CellContent.Hit:
-                                    res += "B ";
+                                    //res += "B ";
+                                    Console.BackgroundColor = ConsoleColor.Red;
+                                    Console.Write("B ");
                                     break;
                                 case CellContent.Player:
-                                    res += "E ";
+                                    //res += "E ";
+                                    Console.ForegroundColor = ConsoleColor.Black;
+                                    Console.Write("E ");
                                     break;
                                 case CellContent.Hole:
-                                    res += "O ";
+                                    //res += "O ";
+                                    Console.BackgroundColor = ConsoleColor.Black;
+                                    Console.ForegroundColor = ConsoleColor.Red;
+                                    Console.Write("O ");
                                     break;
                                 case CellContent.Aiming:
-                                    res += "T ";
+                                    //res += "T ";
+                                    Console.BackgroundColor = ConsoleColor.Red;
+                                    Console.ForegroundColor = ConsoleColor.Black;
+                                    Console.Write("T ");
                                     break;
                             }
                         }
                     }
-                    Console.WriteLine(res);
+                    //Console.WriteLine(res);
+                    Console.WriteLine();
                 }
+                Console.BackgroundColor = ConsoleColor.Black;
+                Console.ForegroundColor = ConsoleColor.White;
                 Console.Write("\nArrows: Move bot    ");
                 if (attackTime > 0)
                     Console.Write("Drop bomb: " + ((attackTime < 10) ? " " + attackTime : attackTime.ToString()) + "       ");
