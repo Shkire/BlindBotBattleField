@@ -1,7 +1,0 @@
-C:\Users\danie\Documents\GitHub\BlindBotBattleField\ExtensionMethods\bin\Debug\ExtensionMethods.dll
-C:\Users\danie\Documents\GitHub\BlindBotBattleField\ExtensionMethods\bin\Debug\ExtensionMethods.pdb
-C:\Users\danie\Documents\GitHub\BlindBotBattleField\ExtensionMethods\obj\Debug\ExtensionMethods.dll
-C:\Users\danie\Documents\GitHub\BlindBotBattleField\ExtensionMethods\obj\Debug\ExtensionMethods.pdb
-C:\Users\danie\Documents\GitHub\BlindBotBattleField\ExtensionMethods\bin\Debug\BasicClasses.dll
-C:\Users\danie\Documents\GitHub\BlindBotBattleField\ExtensionMethods\bin\Debug\BasicClasses.pdb
-C:\Users\danie\Documents\GitHub\BlindBotBattleField\ExtensionMethods\obj\Debug\ExtensionMethods.csprojResolveAssemblyReference.cache

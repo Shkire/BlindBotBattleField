@@ -1,1 +1,5 @@
 .vs
+Backup*
+bin
+obj
+ServiceFabricServicesBackup
