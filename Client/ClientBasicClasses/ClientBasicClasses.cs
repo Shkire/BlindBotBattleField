@@ -1043,7 +1043,7 @@ namespace ClientBasicClasses
                     }
                 }
                 Console.Beep();
-                RemoveMapInfoAsync(time, 30000);
+                RemoveMapInfoAsync(time, 3000);
             }
             else
             {
